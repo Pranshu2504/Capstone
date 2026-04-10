@@ -1,0 +1,285 @@
+# ═══════════════════════════════════════════════════════════════
+#  ZORA — Project-wide .gitignore
+#  Covers: frontend (React Native), backend (Node/Python), ai
+# ═══════════════════════════════════════════════════════════════
+
+
+# ───────────────────────────────────────────────
+# SECRETS & ENVIRONMENT
+# ───────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+!.env.sample
+*.pem
+*.key
+*.p12
+*.keystore
+*.jks
+secrets/
+credentials/
+service-account*.json
+google-services.json
+GoogleService-Info.plist
+firebase*.json
+*.secret
+*.token
+config/secrets.*
+config/local.*
+
+
+# ───────────────────────────────────────────────
+# NODE / NPM / YARN / PNPM
+# ───────────────────────────────────────────────
+node_modules/
+.pnp
+.pnp.js
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.npm
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+
+# ───────────────────────────────────────────────
+# REACT NATIVE
+# ───────────────────────────────────────────────
+frontend/.expo/
+frontend/expo-env.d.ts
+frontend/.expo-shared/
+
+# Metro
+frontend/.metro-health-check*
+frontend/metro-cache/
+
+# Android build
+frontend/android/.gradle/
+frontend/android/build/
+frontend/android/app/build/
+frontend/android/local.properties
+frontend/android/captures/
+frontend/android/.idea/
+frontend/android/*.iml
+frontend/android/key.properties
+frontend/android/app/release/
+frontend/android/app/debug/
+
+# iOS build
+frontend/ios/Pods/
+frontend/ios/build/
+frontend/ios/*.xcworkspace
+frontend/ios/DerivedData/
+frontend/ios/*.ipa
+frontend/ios/.xcode.env.local
+
+# Bundler output
+frontend/*.jsbundle
+frontend/dist/
+
+# Logs
+frontend/logs/
+frontend/*.log
+
+
+# ───────────────────────────────────────────────
+# PYTHON (AI / Backend)
+# ───────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+parts/
+var/
+sdist/
+develop-eggs/
+.installed.cfg
+lib64/
+.eggs/
+
+# Virtual environments
+venv/
+.venv/
+env/
+.env/
+ENV/
+env.bak/
+venv.bak/
+.virtualenv/
+.pyenv/
+.python-version
+Pipfile.lock
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# ML / AI artifacts
+*.pkl
+*.pickle
+*.h5
+*.hdf5
+*.pt
+*.pth
+*.onnx
+*.safetensors
+*.bin
+*.ckpt
+models/
+checkpoints/
+weights/
+embeddings/
+*.faiss
+*.index
+vector_store/
+chroma_db/
+*.parquet
+
+# Dataset & uploads
+data/raw/
+data/processed/
+data/external/
+uploads/
+tmp/
+temp/
+
+# MLflow / experiment tracking
+mlruns/
+mlartifacts/
+wandb/
+runs/
+.wandb/
+artifacts/
+
+
+# ───────────────────────────────────────────────
+# BACKEND (Node.js / Express / FastAPI)
+# ───────────────────────────────────────────────
+backend/dist/
+backend/build/
+backend/logs/
+backend/*.log
+backend/uploads/
+backend/tmp/
+backend/.cache/
+backend/coverage/
+backend/.nyc_output/
+
+
+# ───────────────────────────────────────────────
+# DATABASES
+# ───────────────────────────────────────────────
+*.sqlite
+*.sqlite3
+*.db
+*.db-shm
+*.db-wal
+*.sql
+dump.rdb
+*.rdb
+
+
+# ───────────────────────────────────────────────
+# DOCKER
+# ───────────────────────────────────────────────
+.dockerignore
+docker-compose.override.yml
+docker-compose.local.yml
+.docker/
+
+
+# ───────────────────────────────────────────────
+# TYPESCRIPT / BUILD OUTPUT
+# ───────────────────────────────────────────────
+*.js.map
+*.d.ts.map
+tsconfig.tsbuildinfo
+.tsbuildinfo
+
+
+# ───────────────────────────────────────────────
+# TESTING & COVERAGE
+# ───────────────────────────────────────────────
+coverage/
+.coverage
+.coverage.*
+htmlcov/
+.pytest_cache/
+.jest-cache/
+__snapshots__/
+test-results/
+*.lcov
+
+
+# ───────────────────────────────────────────────
+# EDITORS & IDE
+# ───────────────────────────────────────────────
+.idea/
+.vscode/settings.json
+.vscode/launch.json
+.vscode/tasks.json
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+
+# ───────────────────────────────────────────────
+# OS
+# ───────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+$RECYCLE.BIN/
+
+
+# ───────────────────────────────────────────────
+# LOGS & DEBUGGING
+# ───────────────────────────────────────────────
+*.log
+*.log.*
+logs/
+log/
+*.pid
+*.seed
+*.pid.lock
+npm-debug.log*
+crash.log
+error.log
+
+
+# ───────────────────────────────────────────────
+# MISC
+# ───────────────────────────────────────────────
+.cache/
+.parcel-cache/
+.turbo/
+.next/
+.nuxt/
+.output/
+.vercel/
+.netlify/
+*.bak
+*.orig
+*.tmp
+*.temp
