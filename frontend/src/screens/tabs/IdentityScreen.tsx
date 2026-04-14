@@ -56,18 +56,52 @@ const YEAR_IN_STYLE = [
   },
 ];
 
-const SETTINGS_TILES = [
+const INITIAL_SETTINGS = [
   { icon: "sliders", label: "Style Preferences", status: "Effortless · Sharp · Powerful" },
   { icon: "user", label: "Size Profile", status: "S / EU 36 / 165cm" },
-  { icon: "calendar", label: "Calendar Sync", status: "2 calendars synced" },
+  { icon: "calendar", label: "Calendar Sync", status: "Not synced" },
   { icon: "monitor", label: "Mirror Connect", status: "Not connected" },
   { icon: "lock", label: "Privacy", status: "Friends only" },
-  { icon: "at-sign", label: "Social Accounts", status: "Instagram linked" },
+  { icon: "at-sign", label: "Social Accounts", status: "No accounts linked" },
 ];
 
 export default function IdentityScreen() {
   const insets = useSafeAreaInsets();
   const [settingsModal, setSettingsModal] = useState<string | null>(null);
+  const [settingsData, setSettingsData] = useState(INITIAL_SETTINGS);
+  const [isLinking, setIsLinking] = useState(false);
+  const [linkSuccess, setLinkSuccess] = useState(false);
+
+  const handleLinkAccount = () => {
+    if (!settingsModal) return;
+    ReactNativeHapticFeedback.trigger("impactMedium");
+    setIsLinking(true);
+    
+    setTimeout(() => {
+      ReactNativeHapticFeedback.trigger("notificationSuccess");
+      setIsLinking(false);
+      setLinkSuccess(true);
+      
+      setSettingsData(prev => prev.map(item => {
+        if (item.label === settingsModal) {
+          let newStatus = "Connected";
+          if (settingsModal === "Social Accounts") newStatus = "Instagram & TikTok linked";
+          if (settingsModal === "Calendar Sync") newStatus = "Google Calendar synced";
+          if (settingsModal === "Mirror Connect") newStatus = "ZORA Mirror Active";
+          return { ...item, status: newStatus };
+        }
+        return item;
+      }));
+    }, 2000);
+  };
+
+  const closeSettings = () => {
+    setSettingsModal(null);
+    setTimeout(() => {
+      setLinkSuccess(false);
+      setIsLinking(false);
+    }, 300);
+  };
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const bottomPad = Platform.OS === "web" ? 34 : insets.bottom;
@@ -257,7 +291,7 @@ export default function IdentityScreen() {
             ))}
           </ScrollView>
 
-          <Text style={[styles.subLabel, { color: "#555555" }]}>collecting dust</Text>
+          <Text style={[styles.subLabel, { color: "#A3A3A3" }]}>collecting dust</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.itemRail}>
             {dusty.map((item, i) => (
               <View key={i} style={[styles.reusabilityCard, styles.dustyCard]}>
@@ -291,7 +325,7 @@ export default function IdentityScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Settings</Text>
           <View style={styles.settingsTiles}>
-            {SETTINGS_TILES.map((tile) => (
+            {settingsData.map((tile) => (
               <TouchableOpacity
                 key={tile.label}
                 onPress={() => {
@@ -305,7 +339,7 @@ export default function IdentityScreen() {
                 </View>
                 <Text style={styles.settingsTileLabel}>{tile.label}</Text>
                 <Text style={styles.settingsTileStatus} numberOfLines={1}>{tile.status}</Text>
-                <Feather name="chevron-right" size={13} color="#333" style={{ marginLeft: "auto" }} />
+                <Feather name="chevron-right" size={13} color="#777" style={{ marginLeft: "auto" }} />
               </TouchableOpacity>
             ))}
           </View>
@@ -316,7 +350,7 @@ export default function IdentityScreen() {
         <TouchableOpacity
           style={styles.sheetBackdrop}
           activeOpacity={1}
-          onPress={() => setSettingsModal(null)}
+          onPress={closeSettings}
         />
         <View style={styles.settingsSheet}>
           <View style={styles.sheetHandle} />
@@ -324,17 +358,36 @@ export default function IdentityScreen() {
           <View style={styles.settingsSheetBody}>
             <Text style={styles.settingsSheetNote}>
               {settingsModal === "Calendar Sync"
-                ? "2 calendars currently synced: Personal, Work. Tap to manage connections."
+                ? "Seamlessly integrate your daily agenda to let ZORA suggest event-appropriate outfits."
                 : settingsModal === "Mirror Connect"
-                ? "Connect ZORA to a smart mirror device for hands-free outfit previews."
-                : settingsModal === "Privacy"
-                ? "Control who sees your style profile, outfit plans, and wear history."
+                ? "Connect ZORA to a physical smart mirror device for hands-free 3D outfit previews."
+                : settingsModal === "Social Accounts"
+                ? "Link your social media to let ZORA analyze to your aesthetic pins and saved posts."
                 : "Adjust your preferences for this section."}
             </Text>
+
+            {(settingsModal === "Calendar Sync" || settingsModal === "Mirror Connect" || settingsModal === "Social Accounts") && (
+              <TouchableOpacity
+                style={[
+                  styles.linkButton,
+                  (isLinking || linkSuccess) && { backgroundColor: "#C9A84C", borderColor: "#C9A84C" }
+                ]}
+                onPress={handleLinkAccount}
+                disabled={isLinking || linkSuccess}
+              >
+                <Text style={[
+                  styles.linkButtonText,
+                  (isLinking || linkSuccess) && { color: "#0A0A0A" }
+                ]}>
+                  {isLinking ? "authenticating securely..." : linkSuccess ? "successfully linked" : "connect new account"}
+                </Text>
+              </TouchableOpacity>
+            )}
+
           </View>
           <TouchableOpacity
             style={styles.settingsSheetClose}
-            onPress={() => setSettingsModal(null)}
+            onPress={closeSettings}
           >
             <Text style={styles.settingsSheetCloseText}>done</Text>
           </TouchableOpacity>
@@ -469,7 +522,7 @@ const styles = StyleSheet.create({
   sectionSub: {
     fontFamily: "Inter_400Regular",
     fontSize: 10,
-    color: "#555555",
+    color: "#A3A3A3",
     letterSpacing: 0.5,
   },
   radarContainer: {
@@ -499,7 +552,7 @@ const styles = StyleSheet.create({
   radarLabel: {
     fontFamily: "Inter_400Regular",
     fontSize: 9,
-    color: "#555555",
+    color: "#A3A3A3",
     width: 60,
     textAlign: "center",
   },
@@ -527,7 +580,7 @@ const styles = StyleSheet.create({
   sustainLabel: {
     fontFamily: "Inter_400Regular",
     fontSize: 10,
-    color: "#555555",
+    color: "#A3A3A3",
   },
   subLabel: {
     fontFamily: "Inter_500Medium",
@@ -587,7 +640,7 @@ const styles = StyleSheet.create({
   yearCardLabel: {
     fontFamily: "Inter_500Medium",
     fontSize: 10,
-    color: "#555555",
+    color: "#A3A3A3",
     letterSpacing: 1.5,
     textTransform: "uppercase",
   },
@@ -606,7 +659,7 @@ const styles = StyleSheet.create({
   yearCardCopy: {
     fontFamily: "Inter_400Regular",
     fontSize: 10,
-    color: "#555555",
+    color: "#A3A3A3",
     lineHeight: 15,
   },
   settingsTiles: {
@@ -640,7 +693,7 @@ const styles = StyleSheet.create({
   settingsTileStatus: {
     fontFamily: "Inter_400Regular",
     fontSize: 11,
-    color: "#555555",
+    color: "#A3A3A3",
     flex: 1,
     textAlign: "right",
     marginLeft: "auto" as any,
@@ -674,7 +727,7 @@ const styles = StyleSheet.create({
   settingsSheetNote: {
     fontFamily: "Inter_400Regular",
     fontSize: 14,
-    color: "#888888",
+    color: "#D1D1D1",
     lineHeight: 22,
   },
   settingsSheetClose: {
@@ -688,6 +741,21 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#0A0A0A",
     letterSpacing: 2,
+    textTransform: "uppercase",
+  },
+  linkButton: {
+    marginTop: 10,
+    paddingVertical: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "rgba(201,168,76,0.6)",
+    alignItems: "center",
+  },
+  linkButtonText: {
+    fontFamily: "Inter_500Medium",
+    fontSize: 12,
+    color: "#C9A84C",
+    letterSpacing: 1.5,
     textTransform: "uppercase",
   },
 });

@@ -6,8 +6,11 @@ import {
   TouchableOpacity,
   Text,
   Platform,
+  Modal,
+  TextInput,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
 import Feather from 'react-native-vector-icons/Feather';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 import { useColors } from '@/hooks/useColors';
@@ -27,10 +30,10 @@ const C = {
   green: '#7ABA7A',
   warmWhite: '#E0D8CC',
   lightWarm: '#F0ECE4',
-  muted555: '#555555',
-  muted888: '#888888',
-  muted444: '#444444',
-  muted666: '#666666',
+  muted555: '#999999',
+  muted888: '#BBBBBB',
+  muted444: '#BBBBBB',
+  muted666: '#AAAAAA',
   warnBg: '#2A1010',
   warnText: '#AA6060',
   warnBorder: '#3A1A1A',
@@ -66,19 +69,6 @@ const BOTTOMS = [
   { id: 'b5', name: 'sweatpants',    bg: '#1A1414', wears: 3  },
 ];
 
-const SHOES = [
-  { id: 's1', name: 'white sneakers', bg: '#1E1E1E', stroke: '#888888' },
-  { id: 's2', name: 'black loafers',  bg: '#141414', stroke: '#555555' },
-  { id: 's3', name: 'tan boots',      bg: '#1C1610', stroke: '#7A5A3A' },
-  { id: 's4', name: 'gold slides',    bg: '#1E1A10', stroke: '#C9A84C' },
-];
-
-const ACCESSORIES = [
-  { id: 'a1', name: 'gold watch',  icon: 'clock',        featured: true  },
-  { id: 'a2', name: 'tote bag',    icon: 'shopping-bag', featured: false },
-  { id: 'a3', name: 'sunglasses',  icon: 'eye',          featured: false },
-  { id: 'a4', name: 'cap',         icon: 'box',          featured: false },
-];
 
 const OUTFITS = [
   {
@@ -234,21 +224,6 @@ const rak = StyleSheet.create({
   scroll:   { gap: 8, alignItems: 'flex-start' },
 });
 
-function ShoeItem({ name, bg, stroke }: { name: string; bg: string; stroke: string }) {
-  return (
-    <View style={si.wrapper}>
-      <View style={[si.box, { backgroundColor: bg }]}>
-        <Feather name="arrow-right" size={22} color={stroke} />
-      </View>
-      <Text style={si.name} numberOfLines={1}>{name}</Text>
-    </View>
-  );
-}
-const si = StyleSheet.create({
-  wrapper: { width: 86, alignItems: 'center' },
-  box:     { width: 86, height: 58, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  name:    { fontFamily: 'Inter_400Regular', fontSize: 8, color: C.muted888, marginTop: 6, maxWidth: 84, textAlign: 'center' },
-});
 
 function OutfitCard({ name, wears, occasion, pieces }: typeof OUTFITS[0]) {
   return (
@@ -278,10 +253,20 @@ const oc = StyleSheet.create({
 // ─── Main Screen ─────────────────────────────────────────────────────────────
 export default function WardrobeScreen() {
   const colors = useColors();
+  const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
   const [activeFilter, setActiveFilter] = useState('all');
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importLink, setImportLink] = useState('');
 
   const topPad = Platform.OS === 'web' ? 44 : insets.top;
+
+  const handleImportSubmit = () => {
+    ReactNativeHapticFeedback.trigger('notificationSuccess');
+    setShowImportModal(false);
+    setImportLink('');
+    navigation.navigate('lens');
+  };
 
   const handleFilterPress = (pill: string) => {
     ReactNativeHapticFeedback.trigger('impactLight');
@@ -300,6 +285,9 @@ export default function WardrobeScreen() {
           </TouchableOpacity>
           <TouchableOpacity style={s.iconBtn}>
             <Feather name="sliders" size={11} color={C.brass} />
+          </TouchableOpacity>
+          <TouchableOpacity style={s.iconBtn} onPress={() => navigation.navigate('Identity')}>
+            <Feather name="user" size={11} color={C.brass} />
           </TouchableOpacity>
         </View>
       </View>
@@ -343,6 +331,29 @@ export default function WardrobeScreen() {
         contentContainerStyle={s.scroll}
       >
 
+        {/* Add to Wardrobe Strip */}
+        <View style={[s.addStrip, { marginTop: 16, marginBottom: 4 }]}>
+          <TouchableOpacity style={s.addCardPrimary} activeOpacity={0.85}>
+            <Feather name="camera" size={16} color="#0A0A0A" />
+            <Text style={s.addCardPrimaryText}>photograph it</Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={s.addCardSecondary} 
+            activeOpacity={0.85}
+            onPress={() => {
+              ReactNativeHapticFeedback.trigger('impactLight');
+              setShowImportModal(true);
+            }}
+          >
+            <Feather name="link" size={14} color={C.muted888} />
+            <Text style={s.addCardSecondaryText}>import link</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={s.addCardSecondary} activeOpacity={0.85}>
+            <Feather name="image" size={14} color={C.muted888} />
+            <Text style={s.addCardSecondaryText}>from gallery</Text>
+          </TouchableOpacity>
+        </View>
+
         {/* Section 1: Tops */}
         <SectionHeader title="Tops" count={TOPS.length} />
         <RailCard>
@@ -367,32 +378,6 @@ export default function WardrobeScreen() {
           ))}
         </ShelfCard>
 
-        {/* Section 4: Shoes */}
-        <SectionHeader title="Shoes" count={SHOES.length} />
-        <RackCard>
-          {SHOES.map((item) => (
-            <ShoeItem key={item.id} {...item} />
-          ))}
-        </RackCard>
-
-        {/* Section 5: Accessories */}
-        <SectionHeader title="Accessories" count={ACCESSORIES.length} />
-        <View style={s.accessCard}>
-          <View style={s.accessGrid}>
-            {ACCESSORIES.map((a) => (
-              <View key={a.id} style={[s.accessCell, a.featured && s.accessCellFeatured]}>
-                <Feather
-                  name={a.icon as any}
-                  size={18}
-                  color={a.featured ? C.brass : C.muted666}
-                />
-                <Text style={[s.accessLabel, a.featured && s.accessLabelFeatured]}>
-                  {a.name}
-                </Text>
-              </View>
-            ))}
-          </View>
-        </View>
 
         {/* Section 6: Saved Outfits */}
         <SectionHeader title="Saved Outfits" count={OUTFITS.length} />
@@ -446,23 +431,43 @@ export default function WardrobeScreen() {
           </View>
         </View>
 
-        {/* Add to Wardrobe Strip */}
-        <View style={s.addStrip}>
-          <TouchableOpacity style={s.addCardPrimary} activeOpacity={0.85}>
-            <Feather name="camera" size={16} color="#0A0A0A" />
-            <Text style={s.addCardPrimaryText}>photograph it</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={s.addCardSecondary} activeOpacity={0.85}>
-            <Feather name="link" size={14} color={C.muted888} />
-            <Text style={s.addCardSecondaryText}>import link</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={s.addCardSecondary} activeOpacity={0.85}>
-            <Feather name="image" size={14} color={C.muted888} />
-            <Text style={s.addCardSecondaryText}>from gallery</Text>
+      </ScrollView>
+
+      {/* ── Import Link Modal ── */}
+      <Modal visible={showImportModal} transparent animationType="fade">
+        <TouchableOpacity 
+          style={s.modalBackdrop} 
+          activeOpacity={1} 
+          onPress={() => setShowImportModal(false)}
+        />
+        <View style={s.importModal}>
+          <Text style={s.importModalTitle}>Import from link</Text>
+          <Text style={s.importModalSub}>Paste a link from Zara, H&M, Myntra, etc. to digitally try on this garment.</Text>
+          
+          <View style={s.inputWrapper}>
+            <Feather name="link" size={16} color={C.brass} style={{ marginRight: 8 }} />
+            <TextInput
+              style={s.linkInput}
+              placeholder="https://"
+              placeholderTextColor={C.muted666}
+              value={importLink}
+              onChangeText={setImportLink}
+              autoCapitalize="none"
+              autoCorrect={false}
+              keyboardType="url"
+            />
+          </View>
+
+          <TouchableOpacity 
+            style={[s.importSubmitBtn, !importLink && { opacity: 0.5 }]}
+            onPress={handleImportSubmit}
+            disabled={!importLink}
+          >
+            <Text style={s.importSubmitText}>Import & Try On</Text>
           </TouchableOpacity>
         </View>
+      </Modal>
 
-      </ScrollView>
     </View>
   );
 }
@@ -538,4 +543,50 @@ const s = StyleSheet.create({
   addCardPrimaryText: { fontFamily: 'Inter_500Medium', fontSize: 9, color: '#0A0A0A' },
   addCardSecondary:   { flex: 1, backgroundColor: C.card, borderWidth: 0.5, borderColor: C.cardBorder, borderRadius: 12, paddingVertical: 10, paddingHorizontal: 6, alignItems: 'center', gap: 4 },
   addCardSecondaryText:{ fontFamily: 'Inter_400Regular', fontSize: 9, color: C.muted666 },
+  
+  // Modals
+  modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)' },
+  importModal: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: '#111111',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 24,
+    paddingBottom: Platform.OS === 'web' ? 24 : 44,
+  },
+  importModalTitle: { fontFamily: 'PlayfairDisplay_700Bold', fontSize: 20, color: '#F0ECE4', marginBottom: 6 },
+  importModalSub: { fontFamily: 'Inter_400Regular', fontSize: 11, color: C.muted888, marginBottom: 20, lineHeight: 16 },
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#000000',
+    borderWidth: 1,
+    borderColor: 'rgba(201,168,76,0.3)',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    height: 48,
+    marginBottom: 20,
+  },
+  linkInput: {
+    flex: 1,
+    fontFamily: 'Inter_400Regular',
+    fontSize: 14,
+    color: '#E0D8CC',
+  },
+  importSubmitBtn: {
+    backgroundColor: C.brass,
+    borderRadius: 12,
+    height: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  importSubmitText: {
+    fontFamily: 'Inter_500Medium',
+    fontSize: 13,
+    color: '#000000',
+    letterSpacing: 0.5,
+  },
 });

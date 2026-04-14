@@ -10,6 +10,7 @@ import {
   Modal,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useNavigation } from "@react-navigation/native";
 import Feather from "react-native-vector-icons/Feather";
 import { useColors } from "@/hooks/useColors";
 import ReactNativeHapticFeedback from "react-native-haptic-feedback";
@@ -18,16 +19,31 @@ const { width } = Dimensions.get("window");
 
 const DAYS_ABR = ["M", "T", "W", "T", "F", "S", "S"];
 const FULL_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const FULL_DAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
-const WEEK_DATA = [
-  { day: "Mon", date: 7, outfit: null, events: 0 },
-  { day: "Tue", date: 8, outfit: { colors: ["#3A3020", "#2A2A20"] }, events: 1 },
-  { day: "Wed", date: 9, outfit: { colors: ["#1A2030", "#30201A"] }, events: 2 },
-  { day: "Thu", date: 10, outfit: { colors: ["#2A2218", "#3A301A"] }, events: 3, isToday: true },
-  { day: "Fri", date: 11, outfit: { colors: ["#1E1E2A", "#2A1E1E"] }, events: 1 },
-  { day: "Sat", date: 12, outfit: null, events: 0 },
-  { day: "Sun", date: 13, outfit: null, events: 0 },
-];
+const getDynamicWeekData = (now: Date) => {
+  const currentDayOfWeek = now.getDay();
+  const mondayOffset = currentDayOfWeek === 0 ? -6 : 1 - currentDayOfWeek;
+  const startOfWeek = new Date(now);
+  startOfWeek.setDate(now.getDate() + mondayOffset);
+
+  const mockOutfits = [null, { colors: ["#3A3020", "#2A2A20"] }, { colors: ["#1A2030", "#30201A"] }, { colors: ["#2A2218", "#3A301A"] }, { colors: ["#1E1E2A", "#2A1E1E"] }, null, null];
+  const mockEvents = [0, 1, 2, 3, 1, 0, 0];
+
+  return Array.from({ length: 7 }).map((_, i) => {
+    const d = new Date(startOfWeek);
+    d.setDate(startOfWeek.getDate() + i);
+    return {
+      day: FULL_DAYS[i],
+      fullDay: FULL_DAY_NAMES[i],
+      date: d.getDate(),
+      month: MONTHS[d.getMonth()],
+      outfit: mockOutfits[i],
+      events: mockEvents[i],
+      isToday: d.getDate() === now.getDate() && d.getMonth() === now.getMonth(),
+    };
+  });
+};
 
 const TODAY_EVENTS = [
   { title: "team standup", time: "10:00 am", type: "work", tag: "smart casual" },
@@ -49,21 +65,54 @@ const MONTHS = [
 
 export default function CalendarScreen() {
   const colors = useColors();
+  const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
   const [viewMode, setViewMode] = useState<ViewMode>("week");
   const [selectedDay, setSelectedDay] = useState(10);
   const [showBuildSheet, setShowBuildSheet] = useState(false);
 
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const [weatherData, setWeatherData] = useState("-- · --°");
+
+  React.useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 60000);
+
+    const fetchWeather = async () => {
+      try {
+        const lat = 30.3398;
+        const lon = 76.3869;
+        const city = "Patiala";
+
+        const weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`);
+        const weatherJson = await weatherRes.json();
+        
+        if (weatherJson && weatherJson.current_weather) {
+          setWeatherData(`${city.toLowerCase()} · ${Math.round(weatherJson.current_weather.temperature)}°`);
+        }
+      } catch (err) {
+        console.log("Weather fetch failed", err);
+      }
+    };
+
+    fetchWeather();
+    const weatherTimer = setInterval(fetchWeather, 15 * 60000);
+
+    return () => {
+      clearInterval(timer);
+      clearInterval(weatherTimer);
+    };
+  }, []);
+
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const bottomPad = Platform.OS === "web" ? 34 : insets.bottom;
 
-  const now = new Date();
-  const currentMonth = now.getMonth();
-  const currentYear = now.getFullYear();
+  const currentMonth = currentTime.getMonth();
+  const currentYear = currentTime.getFullYear();
   const firstDay = (new Date(currentYear, currentMonth, 1).getDay() + 6) % 7;
   const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
 
-  const selectedData = WEEK_DATA.find((d) => d.date === selectedDay) || WEEK_DATA[3];
+  const dynamicWeekData = getDynamicWeekData(currentTime);
+  const selectedData = dynamicWeekData.find((d) => d.date === selectedDay) || dynamicWeekData.find(d => d.isToday) || dynamicWeekData[0];
 
   return (
     <View style={[styles.container, { backgroundColor: "#090909" }]}>
@@ -75,6 +124,9 @@ export default function CalendarScreen() {
           </TouchableOpacity>
           <TouchableOpacity style={styles.iconBtn}>
             <Feather name="plus" size={14} color="#C9A84C" />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate("Identity")}>
+            <Feather name="user" size={14} color="#C9A84C" />
           </TouchableOpacity>
         </View>
       </View>
@@ -109,7 +161,7 @@ export default function CalendarScreen() {
             </View>
 
             <View style={styles.weekGrid}>
-              {WEEK_DATA.map((day) => (
+              {dynamicWeekData.map((day) => (
                 <TouchableOpacity
                   key={day.date}
                   onPress={() => {
@@ -158,7 +210,7 @@ export default function CalendarScreen() {
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.dayCardsRow}
             >
-              {WEEK_DATA.map((day) => (
+              {dynamicWeekData.map((day) => (
                 <TouchableOpacity
                   key={day.date}
                   onPress={() => setSelectedDay(day.date)}
@@ -172,7 +224,7 @@ export default function CalendarScreen() {
                     <View style={[styles.dayCardSwatch, { backgroundColor: day.outfit.colors[0] }]} />
                   ) : (
                     <View style={styles.dayCardEmpty}>
-                      <Feather name="plus" size={10} color="#333" />
+                      <Feather name="plus" size={10} color="#777" />
                     </View>
                   )}
                 </TouchableOpacity>
@@ -185,7 +237,7 @@ export default function CalendarScreen() {
               <View style={styles.detailHeader}>
                 <View>
                   <Text style={styles.detailDate}>
-                    {["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"][selectedDay - 7] ?? "Thursday"}, Apr {selectedDay}
+                    {selectedData.fullDay}, {selectedData.month} {selectedData.date}
                   </Text>
                   <Text style={styles.detailSub}>
                     {selectedData?.events ?? 0} events · {selectedData?.outfit ? "outfit planned" : "no outfit yet"}
@@ -193,7 +245,7 @@ export default function CalendarScreen() {
                 </View>
                 <View style={styles.weatherPill}>
                   <Feather name="sun" size={12} color="#C9A84C" />
-                  <Text style={styles.weatherText}>28°</Text>
+                  <Text style={styles.weatherText}>{weatherData.split(' · ')[1] || '22°'}</Text>
                   <Text style={styles.weatherSub}>sunny</Text>
                 </View>
               </View>
@@ -262,7 +314,7 @@ export default function CalendarScreen() {
                 <Text style={styles.shuffleSub}>randomize the whole week</Text>
               </View>
               <View style={styles.shuffleArrow}>
-                <Feather name="chevron-right" size={16} color="#333" />
+                <Feather name="chevron-right" size={16} color="#777" />
               </View>
             </TouchableOpacity>
           </>
@@ -281,7 +333,7 @@ export default function CalendarScreen() {
               ))}
               {Array.from({ length: daysInMonth }).map((_, i) => {
                 const day = i + 1;
-                const isToday = day === now.getDate();
+                const isToday = day === currentTime.getDate();
                 const hasOutfit = [7, 9, 11, 14, 18, 22, 25].includes(day);
                 return (
                   <TouchableOpacity
@@ -348,7 +400,7 @@ export default function CalendarScreen() {
         />
         <View style={styles.buildSheet}>
           <View style={styles.sheetHandle} />
-          <Text style={styles.buildSheetTitle}>build thursday's look</Text>
+          <Text style={styles.buildSheetTitle}>build {selectedData.fullDay.toLowerCase()}'s look</Text>
           <View style={styles.buildOptionGrid}>
             {[
               { icon: "grid", label: "my wardrobe", sub: "browse pieces" },
@@ -427,7 +479,7 @@ const styles = StyleSheet.create({
   togglePillText: {
     fontFamily: "Inter_400Regular",
     fontSize: 11,
-    color: "#666666",
+    color: "#BBBBBB",
     letterSpacing: 0.5,
   },
   togglePillTextActive: {
@@ -446,7 +498,7 @@ const styles = StyleSheet.create({
   weekdayLabel: {
     fontFamily: "Inter_400Regular",
     fontSize: 10,
-    color: "#555555",
+    color: "#A3A3A3",
     width: (width - 40 - 24) / 7,
     textAlign: "center",
   },
@@ -466,7 +518,7 @@ const styles = StyleSheet.create({
   weekCellDate: {
     fontFamily: "Inter_500Medium",
     fontSize: 12,
-    color: "#555555",
+    color: "#A3A3A3",
   },
   outfitSwatch: {
     width: 14,
@@ -491,7 +543,7 @@ const styles = StyleSheet.create({
   sectionLabel: {
     fontFamily: "Inter_400Regular",
     fontSize: 10,
-    color: "#555555",
+    color: "#A3A3A3",
     letterSpacing: 1.5,
     textTransform: "uppercase",
   },
@@ -519,7 +571,7 @@ const styles = StyleSheet.create({
   dayCardAbbr: {
     fontFamily: "Inter_400Regular",
     fontSize: 9,
-    color: "#555555",
+    color: "#A3A3A3",
   },
   dayCardSwatch: {
     width: 24,
@@ -562,7 +614,7 @@ const styles = StyleSheet.create({
   detailSub: {
     fontFamily: "Inter_400Regular",
     fontSize: 11,
-    color: "#555555",
+    color: "#A3A3A3",
   },
   weatherPill: {
     flexDirection: "row",
@@ -583,7 +635,7 @@ const styles = StyleSheet.create({
   weatherSub: {
     fontFamily: "Inter_400Regular",
     fontSize: 10,
-    color: "#555555",
+    color: "#A3A3A3",
   },
   outfitStrip: {
     gap: 8,
@@ -609,7 +661,7 @@ const styles = StyleSheet.create({
   pieceLabel: {
     fontFamily: "Inter_400Regular",
     fontSize: 9,
-    color: "#555555",
+    color: "#A3A3A3",
     textAlign: "center",
   },
   eventRow: {
@@ -635,7 +687,7 @@ const styles = StyleSheet.create({
   eventTime: {
     fontFamily: "Inter_400Regular",
     fontSize: 10,
-    color: "#555555",
+    color: "#A3A3A3",
   },
   eventTag: {
     backgroundColor: "rgba(201,168,76,0.1)",
@@ -688,7 +740,7 @@ const styles = StyleSheet.create({
   actionGhostSub: {
     fontFamily: "Inter_400Regular",
     fontSize: 9,
-    color: "#555555",
+    color: "#A3A3A3",
   },
   shuffleCard: {
     flexDirection: "row",
@@ -722,7 +774,7 @@ const styles = StyleSheet.create({
   shuffleSub: {
     fontFamily: "Inter_400Regular",
     fontSize: 10,
-    color: "#555555",
+    color: "#A3A3A3",
   },
   shuffleArrow: {
     opacity: 0.5,
@@ -746,7 +798,7 @@ const styles = StyleSheet.create({
   monthCellText: {
     fontFamily: "Inter_400Regular",
     fontSize: 10,
-    color: "#555555",
+    color: "#A3A3A3",
   },
   monthDot: {
     width: 4,
@@ -785,7 +837,7 @@ const styles = StyleSheet.create({
   recapWeek: {
     fontFamily: "Inter_400Regular",
     fontSize: 9,
-    color: "#555555",
+    color: "#A3A3A3",
   },
   overviewContainer: {
     gap: 12,
@@ -808,7 +860,7 @@ const styles = StyleSheet.create({
   overviewStatLabel: {
     fontFamily: "Inter_400Regular",
     fontSize: 12,
-    color: "#555555",
+    color: "#A3A3A3",
     letterSpacing: 0.5,
   },
   sheetBackdrop: {
@@ -868,7 +920,7 @@ const styles = StyleSheet.create({
   buildOptionSub: {
     fontFamily: "Inter_400Regular",
     fontSize: 9,
-    color: "#555555",
+    color: "#A3A3A3",
     textAlign: "center",
   },
 });

@@ -10,6 +10,7 @@ import {
   Modal,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useNavigation } from "@react-navigation/native";
 import Feather from "react-native-vector-icons/Feather";
 import ReactNativeHapticFeedback from "react-native-haptic-feedback";
 
@@ -50,6 +51,7 @@ const FRIENDS_ACTIVITY = [
 
 export default function PulseScreen() {
   const insets = useSafeAreaInsets();
+  const navigation = useNavigation<any>();
   const [feedMode, setFeedMode] = useState<FeedMode>("trending");
   const [activeVibe, setActiveVibe] = useState<string | null>(null);
   const [selectedPost, setSelectedPost] = useState<typeof FEED_POSTS[0] | null>(null);
@@ -77,6 +79,9 @@ export default function PulseScreen() {
           </TouchableOpacity>
           <TouchableOpacity style={styles.iconBtn}>
             <Feather name="sliders" size={14} color="#C9A84C" />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate("Identity")}>
+            <Feather name="user" size={14} color="#C9A84C" />
           </TouchableOpacity>
         </View>
       </View>
@@ -176,7 +181,7 @@ export default function PulseScreen() {
                       </View>
                     )}
                     <View style={styles.tryBtn}>
-                      <Feather name="camera" size={10} color="#888" />
+                      <Feather name="camera" size={10} color="#BBB" />
                       <Text style={styles.tryBtnText}>try on</Text>
                     </View>
                   </View>
@@ -209,7 +214,7 @@ export default function PulseScreen() {
                   <Text style={styles.cardHandle}>{post.handle}</Text>
                   <View style={styles.cardActions}>
                     <View style={styles.tryBtn}>
-                      <Feather name="camera" size={10} color="#888" />
+                      <Feather name="camera" size={10} color="#BBB" />
                       <Text style={styles.tryBtnText}>try on</Text>
                     </View>
                   </View>
@@ -242,7 +247,7 @@ export default function PulseScreen() {
               <Text
                 style={[
                   styles.trendDelta,
-                  { color: trend.positive ? "#C9A84C" : "#555555" },
+                  { color: trend.positive ? "#C9A84C" : "#A3A3A3" },
                 ]}
               >
                 {trend.delta}
@@ -468,7 +473,7 @@ const styles = StyleSheet.create({
   togglePillText: {
     fontFamily: "Inter_400Regular",
     fontSize: 11,
-    color: "#666666",
+    color: "#BBBBBB",
     letterSpacing: 0.5,
   },
   togglePillTextActive: {
@@ -482,7 +487,7 @@ const styles = StyleSheet.create({
   sectionLabel: {
     fontFamily: "Inter_400Regular",
     fontSize: 10,
-    color: "#555555",
+    color: "#A3A3A3",
     letterSpacing: 1.5,
     textTransform: "uppercase",
   },
@@ -514,7 +519,7 @@ const styles = StyleSheet.create({
   vibeName: {
     fontFamily: "Inter_400Regular",
     fontSize: 11,
-    color: "#888888",
+    color: "#D1D1D1",
   },
   vibeFilterBar: {
     flexDirection: "row",
@@ -533,7 +538,7 @@ const styles = StyleSheet.create({
   vibeFilterClear: {
     fontFamily: "Inter_500Medium",
     fontSize: 10,
-    color: "#888",
+    color: "#BBB",
   },
   masonryGrid: {
     flexDirection: "row",
@@ -580,7 +585,7 @@ const styles = StyleSheet.create({
   cardHandle: {
     fontFamily: "Inter_400Regular",
     fontSize: 9,
-    color: "#555555",
+    color: "#A3A3A3",
   },
   cardActions: {
     flexDirection: "row",
@@ -613,7 +618,7 @@ const styles = StyleSheet.create({
   tryBtnText: {
     fontFamily: "Inter_400Regular",
     fontSize: 9,
-    color: "#888",
+    color: "#BBB",
   },
   similarBadge: {
     position: "absolute",
@@ -652,7 +657,7 @@ const styles = StyleSheet.create({
   radarSub: {
     fontFamily: "Inter_400Regular",
     fontSize: 10,
-    color: "#555555",
+    color: "#A3A3A3",
   },
   liveBadge: {
     backgroundColor: "#1F1A0D",
@@ -673,7 +678,7 @@ const styles = StyleSheet.create({
   trendName: {
     fontFamily: "Inter_400Regular",
     fontSize: 11,
-    color: "#888888",
+    color: "#D1D1D1",
     width: 90,
   },
   trendBar: {
@@ -732,7 +737,7 @@ const styles = StyleSheet.create({
   stylePalSub: {
     fontFamily: "Inter_400Regular",
     fontSize: 11,
-    color: "#666666",
+    color: "#BBBBBB",
     lineHeight: 16,
   },
   palOutfitPreview: {
@@ -756,7 +761,7 @@ const styles = StyleSheet.create({
   palOutfitSub: {
     fontFamily: "Inter_400Regular",
     fontSize: 10,
-    color: "#555555",
+    color: "#A3A3A3",
     lineHeight: 15,
   },
   palActions: {
@@ -824,7 +829,7 @@ const styles = StyleSheet.create({
   activityAction: {
     fontFamily: "Inter_400Regular",
     fontSize: 11,
-    color: "#666666",
+    color: "#BBBBBB",
   },
   activitySwatches: {
     flexDirection: "row",
@@ -839,7 +844,7 @@ const styles = StyleSheet.create({
   activityTime: {
     fontFamily: "Inter_400Regular",
     fontSize: 10,
-    color: "#555555",
+    color: "#A3A3A3",
   },
   modalBackdrop: {
     flex: 1,
@@ -890,7 +895,7 @@ const styles = StyleSheet.create({
   postDetailHandle: {
     fontFamily: "Inter_400Regular",
     fontSize: 12,
-    color: "#555555",
+    color: "#A3A3A3",
   },
   postDetailActions: {
     flexDirection: "row",
@@ -967,7 +972,7 @@ const styles = StyleSheet.create({
   trendBarDay: {
     fontFamily: "Inter_400Regular",
     fontSize: 9,
-    color: "#555555",
+    color: "#A3A3A3",
   },
   trendMiniGrid: {
     flexDirection: "row",

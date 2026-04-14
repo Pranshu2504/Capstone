@@ -16,7 +16,7 @@ const colors = {
     secondaryForeground: "#E0D8CC",
 
     muted: "#141414",
-    mutedForeground: "#555555",
+    mutedForeground: "#999999",
 
     accent: "#C9A84C",
     accentForeground: "#0A0A0A",
@@ -40,7 +40,7 @@ const colors = {
     charcoal: "#090909",
     midGround: "#161616",
     cardBorder: "#1A1A1A",
-    secondary2: "#888888",
+    secondary2: "#D1D1D1",
   },
 
   radius: 4,

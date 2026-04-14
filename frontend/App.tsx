@@ -1,9 +1,9 @@
 import React from 'react';
-import { Platform, StyleSheet, View } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
+import { Platform, StyleSheet, View, TouchableOpacity } from 'react-native';
+import { NavigationContainer, useNavigation } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -25,6 +25,7 @@ export type RootStackParamList = {
   Door: undefined;
   Interview: undefined;
   Main: undefined;
+  Identity: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -33,12 +34,16 @@ const queryClient = new QueryClient();
 
 function TabNavigator() {
   const colors = useColors();
+  const navigation = useNavigation<any>();
+  const insets = useSafeAreaInsets();
+  
   return (
-    <Tab.Navigator
+    <View style={{ flex: 1 }}>
+      <Tab.Navigator
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: colors.brass,
-        tabBarInactiveTintColor: '#333333',
+        tabBarInactiveTintColor: '#777777',
         tabBarStyle: {
           backgroundColor: '#0D0D0D',
           borderTopWidth: StyleSheet.hairlineWidth,
@@ -61,7 +66,7 @@ function TabNavigator() {
         component={MirrorScreen}
         options={{
           title: 'Mirror',
-          tabBarIcon: ({ color }) => <Feather name="sun" size={20} color={color} />,
+          tabBarIcon: ({ color }) => <Feather name="sun" size={24} color={color} />,
         }}
       />
       <Tab.Screen
@@ -69,19 +74,15 @@ function TabNavigator() {
         component={WardrobeScreen}
         options={{
           title: 'Wardrobe',
-          tabBarIcon: ({ color }) => <Feather name="grid" size={20} color={color} />,
+          tabBarIcon: ({ color }) => <Feather name="grid" size={24} color={color} />,
         }}
       />
       <Tab.Screen
         name="lens"
         component={LensScreen}
         options={{
-          title: '',
-          tabBarIcon: () => (
-            <View style={[lensStyles.center, { backgroundColor: colors.brass }]}>
-              <Feather name="camera" size={22} color="#0A0A0A" />
-            </View>
-          ),
+          title: 'Lens',
+          tabBarIcon: ({ color }) => <Feather name="camera" size={24} color={color} />,
         }}
       />
       <Tab.Screen
@@ -89,7 +90,7 @@ function TabNavigator() {
         component={CalendarScreen}
         options={{
           title: 'Calendar',
-          tabBarIcon: ({ color }) => <Feather name="calendar" size={20} color={color} />,
+          tabBarIcon: ({ color }) => <Feather name="calendar" size={24} color={color} />,
         }}
       />
       <Tab.Screen
@@ -97,36 +98,15 @@ function TabNavigator() {
         component={PulseScreen}
         options={{
           title: 'Pulse',
-          tabBarIcon: ({ color }) => <Feather name="activity" size={20} color={color} />,
-        }}
-      />
-      <Tab.Screen
-        name="identity"
-        component={IdentityScreen}
-        options={{
-          title: 'Me',
-          tabBarIcon: ({ color }) => <Feather name="user" size={20} color={color} />,
+          tabBarIcon: ({ color }) => <Feather name="activity" size={24} color={color} />,
         }}
       />
     </Tab.Navigator>
+    </View>
   );
 }
 
-const lensStyles = StyleSheet.create({
-  center: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 8,
-    shadowColor: '#C9A84C',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.4,
-    shadowRadius: 10,
-    elevation: 6,
-  },
-});
+// Styles removed as they are no longer needed
 
 export default function App() {
   return (
@@ -140,6 +120,7 @@ export default function App() {
                   <Stack.Screen name="Door" component={DoorScreen} />
                   <Stack.Screen name="Interview" component={InterviewScreen} />
                   <Stack.Screen name="Main" component={TabNavigator} />
+                  <Stack.Screen name="Identity" component={IdentityScreen} options={{ presentation: 'modal' }} />
                 </Stack.Navigator>
               </NavigationContainer>
             </KeyboardProvider>

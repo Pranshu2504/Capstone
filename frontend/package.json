@@ -4,7 +4,7 @@
   "private": true,
   "main": "index.js",
   "scripts": {
-    "android": "cd android && gradlew.bat app:installDebug -PreactNativeDevServerPort=8081",
+    "android": "react-native run-android",
     "start": "npx react-native start",
     "start:clean": "npx react-native start --reset-cache",
     "typecheck": "tsc --noEmit"

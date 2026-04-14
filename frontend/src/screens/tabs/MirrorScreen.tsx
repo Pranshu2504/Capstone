@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   StyleSheet,
@@ -11,6 +11,7 @@ import {
   Dimensions,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useNavigation } from "@react-navigation/native";
 import Feather from "react-native-vector-icons/Feather";
 import { useColors } from "@/hooks/useColors";
 import {
@@ -24,10 +25,9 @@ const { width } = Dimensions.get("window");
 
 export default function MirrorScreen() {
   const colors = useColors();
+  const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
   const [occasion, setOccasion] = useState("General");
-  const [explainOpen, setExplainOpen] = useState(false);
-  const explainAnim = useRef(new Animated.Value(0)).current;
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const bottomPad = Platform.OS === "web" ? 34 : insets.bottom;
@@ -35,19 +35,45 @@ export default function MirrorScreen() {
   const occasions = ["General", "Office", "Dinner"];
   const dustItems = MOCK_WARDROBE_ITEMS.filter((i) => i.dustOff).slice(0, 4);
 
-  const toggleExplain = () => {
-    const toValue = explainOpen ? 0 : 1;
-    Animated.spring(explainAnim, {
-      toValue,
-      useNativeDriver: false,
-      damping: 16,
-    }).start();
-    setExplainOpen(!explainOpen);
-  };
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const [weatherData, setWeatherData] = useState("-- · --°");
 
-  const now = new Date();
-  const timeStr = now.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false });
-  const dateStr = now.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
+  useEffect(() => {
+    // Real-time clock tick
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 60000); // update every minute
+
+    // Real-time weather fetch for Patiala (hardcoded to bypass ISP misrouting)
+    const fetchWeather = async () => {
+      try {
+        const lat = 30.3398;
+        const lon = 76.3869;
+        const city = "Patiala";
+
+        // Fetch Live Weather for Patiala
+        const weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`);
+        const weatherJson = await weatherRes.json();
+        
+        if (weatherJson && weatherJson.current_weather) {
+          setWeatherData(`${city.toLowerCase()} · ${Math.round(weatherJson.current_weather.temperature)}°`);
+        }
+      } catch (err) {
+        console.log("Weather fetch failed", err);
+      }
+    };
+
+    fetchWeather(); // Fetch once immediately
+    const weatherTimer = setInterval(fetchWeather, 15 * 60000); // Update every 15 minutes
+
+    return () => {
+      clearInterval(timer);
+      clearInterval(weatherTimer);
+    };
+  }, []);
+
+  const timeStr = currentTime.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false });
+  const dateStr = currentTime.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
 
   return (
     <ScrollView
@@ -59,11 +85,30 @@ export default function MirrorScreen() {
       showsVerticalScrollIndicator={false}
     >
       <View style={styles.masthead}>
-        <Text style={[styles.mastheadTime, { color: colors.warmWhite }]}>{timeStr}</Text>
-        <Text style={[styles.mastheadDate, { color: colors.brass }]}>{dateStr}</Text>
-        <Text style={[styles.mastheadWeather, { color: colors.mutedForeground }]}>
-          London · 22°
-        </Text>
+        <View style={{ flexDirection: "row", gap: 6, alignItems: "baseline" }}>
+          <Text style={[styles.mastheadTime, { color: colors.warmWhite }]}>{timeStr}</Text>
+          <Text style={[styles.mastheadDate, { color: colors.brass }]}>{dateStr}</Text>
+        </View>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+          <Text style={[styles.mastheadWeather, { color: colors.mutedForeground }]}>
+            {weatherData}
+          </Text>
+          <TouchableOpacity
+            style={{
+              width: 34,
+              height: 34,
+              borderRadius: 17,
+              backgroundColor: "#141414",
+              borderWidth: 0.5,
+              borderColor: "#2A1E0A",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+            onPress={() => navigation.navigate("Identity")}
+          >
+            <Feather name="user" size={14} color={colors.brass} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <View style={[styles.heroCard, { backgroundColor: colors.card }]}>
@@ -85,11 +130,6 @@ export default function MirrorScreen() {
                 style={[styles.heroCTASolid, { backgroundColor: colors.brass }]}
               >
                 <Text style={[styles.heroCTAText, { color: colors.charcoal }]}>wear this</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.heroCTAGhost, { borderColor: "rgba(201,168,76,0.5)" }]}
-              >
-                <Text style={[styles.heroCTAText, { color: colors.brass }]}>see why</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -173,34 +213,13 @@ export default function MirrorScreen() {
         </View>
       </View>
 
-      <View style={[styles.explainCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-        <TouchableOpacity
-          onPress={toggleExplain}
-          style={styles.explainHeader}
-        >
-          <View>
-            <Text style={[styles.sectionLabel, { color: colors.brass }]}>ZORA picked this because...</Text>
-          </View>
-          <Feather
-            name={explainOpen ? "chevron-up" : "chevron-down"}
-            size={16}
-            color={colors.mutedForeground}
-          />
-        </TouchableOpacity>
-        {explainOpen && (
-          <View style={styles.explainBody}>
-            {MOCK_OUTFIT_TODAY.reasoning.map((r, i) => (
-              <View key={i} style={styles.reasonRow}>
-                <View style={[styles.reasonDot, { backgroundColor: colors.brass }]} />
-                <Text style={[styles.reasonText, { color: colors.warmWhite }]}>{r}</Text>
-              </View>
-            ))}
-          </View>
-        )}
-      </View>
-
       <View style={styles.section}>
-        <Text style={[styles.sectionLabel, { color: colors.brass }]}>in the world right now</Text>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingRight: 20 }}>
+          <Text style={[styles.sectionLabel, { color: colors.brass }]}>in the world right now</Text>
+          <TouchableOpacity onPress={() => navigation.navigate("pulse")}>
+            <Text style={[styles.sectionLabel, { color: '#888888', letterSpacing: 1 }]}>see all</Text>
+          </TouchableOpacity>
+        </View>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           {MOCK_TRENDS.map((trend) => (
             <View

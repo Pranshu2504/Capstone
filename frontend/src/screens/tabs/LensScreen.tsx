@@ -11,6 +11,7 @@ import {
   Dimensions,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useNavigation } from "@react-navigation/native";
 import Feather from "react-native-vector-icons/Feather";
 import { useColors } from "@/hooks/useColors";
 import { MOCK_WARDROBE_ITEMS } from "@/constants/mockData";
@@ -22,6 +23,7 @@ type Mode = "mirror" | "link";
 
 export default function LensScreen() {
   const colors = useColors();
+  const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
   const [mode, setMode] = useState<Mode>("mirror");
   const [selectedOutfit, setSelectedOutfit] = useState<string[]>([]);
@@ -57,7 +59,24 @@ export default function LensScreen() {
           { paddingTop: topPad + 8 },
         ]}
       >
-        <Text style={[styles.screenTitle, { color: colors.warmWhite }]}>The Lens</Text>
+        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingBottom: 14 }}>
+          <Text style={[styles.screenTitle, { color: colors.warmWhite }]}>The Lens</Text>
+          <TouchableOpacity
+            style={{
+              width: 34,
+              height: 34,
+              borderRadius: 17,
+              backgroundColor: "#141414",
+              borderWidth: 0.5,
+              borderColor: "#2A2A2A",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+            onPress={() => navigation.navigate("Identity")}
+          >
+            <Feather name="user" size={14} color={colors.brass} />
+          </TouchableOpacity>
+        </View>
         <View style={[styles.modeSwitcher, { backgroundColor: colors.card }]}>
           <TouchableOpacity
             onPress={() => setMode("mirror")}
