@@ -8,11 +8,13 @@ import {
   Platform,
   Modal,
   TextInput,
+  PermissionsAndroid,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import Feather from 'react-native-vector-icons/Feather';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
+import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
 import { useColors } from '@/hooks/useColors';
 
 // ─── Design Tokens ───────────────────────────────────────────────────────────
@@ -261,6 +263,79 @@ export default function WardrobeScreen() {
 
   const topPad = Platform.OS === 'web' ? 44 : insets.top;
 
+  const handleMediaSuccess = () => {
+    ReactNativeHapticFeedback.trigger('notificationSuccess');
+    // For prototype purposes, hitting success on the media picker mimics ingestion
+    // and sends the user directly to the try-on Lens screen.
+    navigation.navigate('lens');
+  };
+
+  const handleCamera = async () => {
+    ReactNativeHapticFeedback.trigger('impactLight');
+    
+    if (Platform.OS === 'android') {
+      try {
+        const granted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.CAMERA,
+          {
+            title: "ZORA Camera Permission",
+            message: "ZORA needs access to your camera to photograph your wardrobe items.",
+            buttonNeutral: "Ask Me Later",
+            buttonNegative: "Cancel",
+            buttonPositive: "OK"
+          }
+        );
+        if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
+          console.log("Camera permission denied");
+          return;
+        }
+      } catch (err) {
+        console.warn(err);
+        return;
+      }
+    }
+
+    const result = await launchCamera({ mediaType: 'photo', cameraType: 'back', saveToPhotos: false });
+    if (!result.didCancel && !result.errorCode) {
+      handleMediaSuccess();
+    }
+  };
+
+  const handleGallery = async () => {
+    ReactNativeHapticFeedback.trigger('impactLight');
+
+    if (Platform.OS === 'android') {
+      try {
+        const permission = Number(Platform.Version) >= 33 
+          ? PermissionsAndroid.PERMISSIONS.READ_MEDIA_IMAGES 
+          : PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE;
+
+        const granted = await PermissionsAndroid.request(
+          permission,
+          {
+            title: "ZORA Gallery Permission",
+            message: "ZORA needs access to your photo library to import images of your clothing.",
+            buttonNeutral: "Ask Me Later",
+            buttonNegative: "Cancel",
+            buttonPositive: "OK"
+          }
+        );
+        if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
+          console.log("Gallery permission denied");
+          return;
+        }
+      } catch (err) {
+        console.warn(err);
+        return;
+      }
+    }
+
+    const result = await launchImageLibrary({ mediaType: 'photo', selectionLimit: 1 });
+    if (!result.didCancel && !result.errorCode) {
+      handleMediaSuccess();
+    }
+  };
+
   const handleImportSubmit = () => {
     ReactNativeHapticFeedback.trigger('notificationSuccess');
     setShowImportModal(false);
@@ -333,7 +408,7 @@ export default function WardrobeScreen() {
 
         {/* Add to Wardrobe Strip */}
         <View style={[s.addStrip, { marginTop: 16, marginBottom: 4 }]}>
-          <TouchableOpacity style={s.addCardPrimary} activeOpacity={0.85}>
+          <TouchableOpacity style={s.addCardPrimary} activeOpacity={0.85} onPress={handleCamera}>
             <Feather name="camera" size={16} color="#0A0A0A" />
             <Text style={s.addCardPrimaryText}>photograph it</Text>
           </TouchableOpacity>
@@ -348,7 +423,7 @@ export default function WardrobeScreen() {
             <Feather name="link" size={14} color={C.muted888} />
             <Text style={s.addCardSecondaryText}>import link</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={s.addCardSecondary} activeOpacity={0.85}>
+          <TouchableOpacity style={s.addCardSecondary} activeOpacity={0.85} onPress={handleGallery}>
             <Feather name="image" size={14} color={C.muted888} />
             <Text style={s.addCardSecondaryText}>from gallery</Text>
           </TouchableOpacity>
