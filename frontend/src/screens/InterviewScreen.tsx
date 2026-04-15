@@ -264,7 +264,6 @@ export default function InterviewScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0D0B08",
     paddingHorizontal: 24,
     gap: 24,
   },
