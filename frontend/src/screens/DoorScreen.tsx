@@ -71,7 +71,7 @@ export default function DoorScreen() {
 
   if (doorOpen) {
     return (
-      <View style={[styles.container, { backgroundColor: "#0D0B08" }]}>
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
         <ImageBackground
           source={require("../../assets/images/wardrobe_interior.png")}
           style={StyleSheet.absoluteFillObject}
@@ -192,7 +192,6 @@ export default function DoorScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0D0B08",
   },
   doorOverlay: {
     backgroundColor: "rgba(13,11,8,0.3)",

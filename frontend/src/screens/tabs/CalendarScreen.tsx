@@ -115,23 +115,23 @@ export default function CalendarScreen() {
   const selectedData = dynamicWeekData.find((d) => d.date === selectedDay) || dynamicWeekData.find(d => d.isToday) || dynamicWeekData[0];
 
   return (
-    <View style={[styles.container, { backgroundColor: "#090909" }]}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { paddingTop: topPad + 8 }]}>
         <Text style={styles.screenTitle}>The Calendar</Text>
         <View style={styles.headerIcons}>
-          <TouchableOpacity style={styles.iconBtn}>
-            <Feather name="refresh-cw" size={14} color="#C9A84C" />
+          <TouchableOpacity style={[styles.iconBtn, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <Feather name="refresh-cw" size={14} color={colors.primary} />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.iconBtn}>
-            <Feather name="plus" size={14} color="#C9A84C" />
+          <TouchableOpacity style={[styles.iconBtn, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <Feather name="plus" size={14} color={colors.primary} />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate("Identity")}>
-            <Feather name="user" size={14} color="#C9A84C" />
+          <TouchableOpacity style={[styles.iconBtn, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={() => navigation.navigate("Identity")}>
+            <Feather name="user" size={14} color={colors.primary} />
           </TouchableOpacity>
         </View>
       </View>
 
-      <View style={styles.toggleContainer}>
+      <View style={[styles.toggleContainer, { backgroundColor: colors.card, borderColor: colors.border }]}>
         {(["week", "month", "overview"] as ViewMode[]).map((mode) => (
           <TouchableOpacity
             key={mode}
@@ -139,9 +139,9 @@ export default function CalendarScreen() {
               ReactNativeHapticFeedback.trigger("impactLight");
               setViewMode(mode);
             }}
-            style={[styles.togglePill, viewMode === mode && styles.togglePillActive]}
+            style={[styles.togglePill, viewMode === mode && [styles.togglePillActive, { backgroundColor: colors.primary }]]}
           >
-            <Text style={[styles.togglePillText, viewMode === mode && styles.togglePillTextActive]}>
+            <Text style={[styles.togglePillText, { color: colors.mutedForeground }, viewMode === mode && [styles.togglePillTextActive, { color: colors.primaryForeground }]]}>
               {mode}
             </Text>
           </TouchableOpacity>
@@ -171,17 +171,17 @@ export default function CalendarScreen() {
                   style={[
                     styles.weekCell,
                     day.outfit
-                      ? { backgroundColor: "#161208", borderColor: "rgba(201,168,76,0.2)" }
-                      : { backgroundColor: "#111111", borderColor: "#1A1A1A" },
-                    day.isToday && { borderColor: "#C9A84C", borderWidth: 1 },
-                    selectedDay === day.date && { borderColor: "#C9A84C", borderWidth: 1.5 },
+                      ? { backgroundColor: colors.surface, borderColor: colors.brassSubtle }
+                      : { backgroundColor: colors.card, borderColor: colors.border },
+                    day.isToday && { borderColor: colors.primary, borderWidth: 1 },
+                    selectedDay === day.date && { borderColor: colors.primary, borderWidth: 1.5 },
                   ]}
                 >
                   <Text
                     style={[
                       styles.weekCellDate,
-                      day.isToday && { color: "#C9A84C" },
-                      selectedDay === day.date && !day.isToday && { color: "#E0D8CC" },
+                      day.isToday && { color: colors.primary },
+                      selectedDay === day.date && !day.isToday && { color: colors.text },
                     ]}
                   >
                     {day.date}
@@ -243,10 +243,10 @@ export default function CalendarScreen() {
                     {selectedData?.events ?? 0} events · {selectedData?.outfit ? "outfit planned" : "no outfit yet"}
                   </Text>
                 </View>
-                <View style={styles.weatherPill}>
-                  <Feather name="sun" size={12} color="#C9A84C" />
-                  <Text style={styles.weatherText}>{weatherData.split(' · ')[1] || '22°'}</Text>
-                  <Text style={styles.weatherSub}>sunny</Text>
+                <View style={[styles.weatherPill, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                  <Feather name="sun" size={12} color={colors.primary} />
+                  <Text style={[styles.weatherText, { color: colors.text }]}>{weatherData.split(' · ')[1] || '22°'}</Text>
+                  <Text style={[styles.weatherSub, { color: colors.mutedForeground }]}>sunny</Text>
                 </View>
               </View>
 
@@ -286,18 +286,18 @@ export default function CalendarScreen() {
 
               <View style={styles.actionGrid}>
                 <TouchableOpacity
-                  style={styles.actionSolid}
+                  style={[styles.actionSolid, { backgroundColor: colors.primary }]}
                   onPress={() => ReactNativeHapticFeedback.trigger("impactLight")}
                 >
-                  <Text style={styles.actionSolidLabel}>let ZORA pick</Text>
-                  <Text style={styles.actionSolidSub}>AI auto-plan</Text>
+                  <Text style={[styles.actionSolidLabel, { color: colors.primaryForeground }]}>let ZORA pick</Text>
+                  <Text style={[styles.actionSolidSub, { color: colors.primaryForeground, opacity: 0.7 }]}>AI auto-plan</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={styles.actionGhost}
+                  style={[styles.actionGhost, { borderColor: colors.brassSubtle }]}
                   onPress={() => setShowBuildSheet(true)}
                 >
-                  <Text style={styles.actionGhostLabel}>build it</Text>
-                  <Text style={styles.actionGhostSub}>from wardrobe</Text>
+                  <Text style={[styles.actionGhostLabel, { color: colors.primary }]}>build it</Text>
+                  <Text style={[styles.actionGhostSub, { color: colors.mutedForeground }]}>from wardrobe</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -341,14 +341,14 @@ export default function CalendarScreen() {
                     onPress={() => ReactNativeHapticFeedback.trigger("impactLight")}
                     style={[
                       styles.monthCell,
-                      hasOutfit && { backgroundColor: "#161208", borderColor: "rgba(201,168,76,0.2)" },
-                      isToday && { borderColor: "#C9A84C", borderWidth: 1 },
+                      hasOutfit && { backgroundColor: colors.surface, borderColor: colors.brassSubtle },
+                      isToday && { borderColor: colors.primary, borderWidth: 1 },
                     ]}
                   >
-                    <Text style={[styles.monthCellText, isToday && { color: "#C9A84C" }]}>
+                    <Text style={[styles.monthCellText, { color: colors.text }, isToday && { color: colors.primary }]}>
                       {day}
                     </Text>
-                    {hasOutfit && <View style={styles.monthDot} />}
+                    {hasOutfit && <View style={[styles.monthDot, { backgroundColor: colors.primary }]} />}
                   </TouchableOpacity>
                 );
               })}
@@ -398,9 +398,9 @@ export default function CalendarScreen() {
           activeOpacity={1}
           onPress={() => setShowBuildSheet(false)}
         />
-        <View style={styles.buildSheet}>
-          <View style={styles.sheetHandle} />
-          <Text style={styles.buildSheetTitle}>build {selectedData.fullDay.toLowerCase()}'s look</Text>
+        <View style={[styles.buildSheet, { backgroundColor: colors.card }]}>
+          <View style={[styles.sheetHandle, { backgroundColor: colors.border }]} />
+          <Text style={[styles.buildSheetTitle, { color: colors.text }]}>build {selectedData.fullDay.toLowerCase()}'s look</Text>
           <View style={styles.buildOptionGrid}>
             {[
               { icon: "grid", label: "my wardrobe", sub: "browse pieces" },
@@ -409,14 +409,14 @@ export default function CalendarScreen() {
             ].map((opt) => (
               <TouchableOpacity
                 key={opt.icon}
-                style={styles.buildOption}
+                style={[styles.buildOption, { backgroundColor: colors.surface, borderColor: colors.border }]}
                 onPress={() => setShowBuildSheet(false)}
               >
-                <View style={styles.buildOptionIcon}>
-                  <Feather name={opt.icon as any} size={18} color="#C9A84C" />
+                <View style={[styles.buildOptionIcon, { backgroundColor: colors.brassSubtle }]}>
+                  <Feather name={opt.icon as any} size={18} color={colors.primary} />
                 </View>
-                <Text style={styles.buildOptionLabel}>{opt.label}</Text>
-                <Text style={styles.buildOptionSub}>{opt.sub}</Text>
+                <Text style={[styles.buildOptionLabel, { color: colors.text }]}>{opt.label}</Text>
+                <Text style={[styles.buildOptionSub, { color: colors.mutedForeground }]}>{opt.sub}</Text>
               </TouchableOpacity>
             ))}
           </View>
