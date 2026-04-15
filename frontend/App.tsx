@@ -21,12 +21,16 @@ import CalendarScreen from './src/screens/tabs/CalendarScreen';
 import PulseScreen from './src/screens/tabs/PulseScreen';
 import IdentityScreen from './src/screens/tabs/IdentityScreen';
 import ChatbotScreen from './src/screens/ChatbotScreen';
+import FriendsScreen from './src/screens/FriendsScreen';
+import ForYouScreen from './src/screens/ForYouScreen';
 export type RootStackParamList = {
   Door: undefined;
   Interview: undefined;
   Main: undefined;
   Identity: undefined;
   Chatbot: undefined;
+  Friends: undefined;
+  ForYou: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -172,6 +176,8 @@ export default function App() {
                   <Stack.Screen name="Main" component={TabNavigator} />
                   <Stack.Screen name="Identity" component={IdentityScreen} options={{ presentation: 'modal' }} />
                   <Stack.Screen name="Chatbot" component={ChatbotScreen} options={{ presentation: 'formSheet' }} />
+                  <Stack.Screen name="Friends" component={FriendsScreen} />
+                  <Stack.Screen name="ForYou" component={ForYouScreen} />
                 </Stack.Navigator>
               </NavigationContainer>
             </KeyboardProvider>

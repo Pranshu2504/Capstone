@@ -92,7 +92,13 @@ export default function PulseScreen() {
             key={mode}
             onPress={() => {
               ReactNativeHapticFeedback.trigger("impactLight");
-              setFeedMode(mode);
+              if (mode === "friends") {
+                navigation.navigate("Friends");
+              } else if (mode === "for you") {
+                navigation.navigate("ForYou");
+              } else {
+                setFeedMode(mode);
+              }
             }}
             style={[styles.togglePill, feedMode === mode && styles.togglePillActive]}
           >
@@ -256,72 +262,7 @@ export default function PulseScreen() {
           ))}
         </View>
 
-        {feedMode === "friends" && (
-          <View style={styles.friendsSection}>
-            <Text style={styles.sectionLabel}>FRIENDS ACTIVITY</Text>
 
-            <View style={styles.stylePalCard}>
-              <View style={styles.stylePalHeader}>
-                <View style={styles.stylePalIconBox}>
-                  <Feather name="heart" size={14} color="#C9A84C" />
-                </View>
-                <View style={styles.stylePalMeta}>
-                  <Text style={styles.stylePalTitle}>style pal request</Text>
-                  <Text style={styles.stylePalSub}>priya is wearing this tomorrow — thoughts?</Text>
-                </View>
-              </View>
-
-              <View style={styles.palOutfitPreview}>
-                <View style={[styles.palOutfitBlock, { backgroundColor: "#1A2020" }]} />
-                <View style={styles.palOutfitInfo}>
-                  <Text style={styles.palOutfitName}>brunch saturday look</Text>
-                  <Text style={styles.palOutfitSub}>planned for Apr 13 · brunch at olive</Text>
-                </View>
-              </View>
-
-              <View style={styles.palActions}>
-                <TouchableOpacity
-                  style={styles.palActionSolid}
-                  onPress={() => ReactNativeHapticFeedback.trigger("impactLight")}
-                >
-                  <Text style={styles.palActionSolidText}>love it</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.palActionGhost}
-                  onPress={() => ReactNativeHapticFeedback.trigger("impactLight")}
-                >
-                  <Text style={styles.palActionGhostText}>not quite</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.palActionGhost}
-                  onPress={() => ReactNativeHapticFeedback.trigger("impactLight")}
-                >
-                  <Text style={styles.palActionGhostText}>suggest something</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            {FRIENDS_ACTIVITY.map((friend, i) => (
-              <View key={i} style={styles.activityCard}>
-                <View style={styles.activityAvatar}>
-                  <Text style={styles.activityInitials}>{friend.initials}</Text>
-                </View>
-                <View style={styles.activityInfo}>
-                  <Text style={styles.activityName}>{friend.name}</Text>
-                  <Text style={styles.activityAction}>{friend.action}</Text>
-                  {friend.swatches.length > 0 && (
-                    <View style={styles.activitySwatches}>
-                      {friend.swatches.map((c, si) => (
-                        <View key={si} style={[styles.activitySwatch, { backgroundColor: c }]} />
-                      ))}
-                    </View>
-                  )}
-                </View>
-                <Text style={styles.activityTime}>{friend.time}</Text>
-              </View>
-            ))}
-          </View>
-        )}
       </ScrollView>
 
       <Modal visible={!!selectedPost} transparent animationType="slide">
