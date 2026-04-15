@@ -141,7 +141,7 @@ export default function InterviewScreen() {
                   style={[
                     styles.tile,
                     {
-                      backgroundColor: opt.color,
+                      backgroundColor: 'color' in opt ? opt.color : "transparent",
                       borderColor: isSelected ? colors.brass : "transparent",
                       borderWidth: isSelected ? 2 : 0,
                     },
@@ -169,7 +169,7 @@ export default function InterviewScreen() {
                   style={[
                     styles.colorBlob,
                     {
-                      backgroundColor: opt.color,
+                      backgroundColor: 'color' in opt ? opt.color : "#000",
                       transform: [{ scale: isSelected ? 1.15 : 1 }],
                       borderWidth: isSelected ? 2 : 0,
                       borderColor: colors.brass,
@@ -199,7 +199,7 @@ export default function InterviewScreen() {
                   ]}
                 >
                   <Feather
-                    name={opt.icon as any}
+                    name={('icon' in opt ? opt.icon : "help-circle") as any}
                     size={22}
                     color={isSelected ? colors.charcoal : colors.mutedForeground}
                   />
