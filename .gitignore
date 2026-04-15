@@ -56,10 +56,12 @@ frontend/expo-env.d.ts
 frontend/.expo-shared/
 
 # Metro
+.metro-cache/
 frontend/.metro-health-check*
 frontend/metro-cache/
 
 # Android build
+.gradle/
 frontend/android/.gradle/
 frontend/android/build/
 frontend/android/app/build/
@@ -80,6 +82,11 @@ frontend/ios/*.ipa
 frontend/ios/.xcode.env.local
 
 # Bundler output
+*.bundle
+*.bundle.meta
+frontend/android/app/src/main/res/drawable-*/assets_*
+frontend/android/app/src/main/res/drawable-*/node_modules_*
+frontend/android/app/src/main/res/raw/keep.xml
 frontend/*.jsbundle
 frontend/dist/
 

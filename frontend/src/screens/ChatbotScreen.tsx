@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Platform } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Feather from 'react-native-vector-icons/Feather';
-import { useColors } from '../hooks/useColors';
+import { useColors } from '@/hooks/useColors';
 
 export default function ChatbotScreen() {
   const navigation = useNavigation();

@@ -12,7 +12,15 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Feather from "react-native-vector-icons/Feather";
 import ReactNativeHapticFeedback from "react-native-haptic-feedback";
+import Animated, { 
+  useSharedValue, 
+  useAnimatedStyle, 
+  withSpring, 
+  interpolateColor 
+} from "react-native-reanimated";
 import { MOCK_USER } from "@/constants/mockData";
+import { useTheme } from "@/context/ThemeContext";
+import { useColors } from "@/hooks/useColors";
 
 const { width } = Dimensions.get("window");
 
@@ -65,8 +73,51 @@ const INITIAL_SETTINGS = [
   { icon: "at-sign", label: "Social Accounts", status: "No accounts linked" },
 ];
 
+const CylindricalToggle = ({ value, onValueChange }: { value: boolean; onValueChange: (v: boolean) => void }) => {
+  const colors = useColors();
+  const offset = useSharedValue(value ? 1 : 0);
+
+  React.useEffect(() => {
+    offset.value = withSpring(value ? 1 : 0, { damping: 15, stiffness: 120 });
+  }, [value]);
+
+  const thumbStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ translateX: offset.value * 22 }],
+      backgroundColor: interpolateColor(
+        offset.value,
+        [0, 1],
+        [colors.mutedForeground, colors.primary]
+      ),
+    };
+  });
+
+  const trackStyle = useAnimatedStyle(() => {
+    return {
+      backgroundColor: interpolateColor(
+        offset.value,
+        [0, 1],
+        [colors.card, colors.brassSubtle]
+      ),
+    };
+  });
+
+  return (
+    <TouchableOpacity 
+      activeOpacity={0.9} 
+      onPress={() => onValueChange(!value)}
+    >
+      <Animated.View style={[styles.customToggleTrack, trackStyle]}>
+        <Animated.View style={[styles.customToggleThumb, thumbStyle]} />
+      </Animated.View>
+    </TouchableOpacity>
+  );
+};
+
 export default function IdentityScreen() {
   const insets = useSafeAreaInsets();
+  const colors = useColors();
+  const { theme, setTheme } = useTheme();
   const [settingsModal, setSettingsModal] = useState<string | null>(null);
   const [settingsData, setSettingsData] = useState(INITIAL_SETTINGS);
   const [isLinking, setIsLinking] = useState(false);
@@ -139,11 +190,11 @@ export default function IdentityScreen() {
   ];
 
   return (
-    <View style={[styles.container]}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { paddingTop: topPad + 8 }]}>
-        <Text style={styles.screenTitle}>The Identity</Text>
-        <TouchableOpacity style={styles.iconBtn}>
-          <Feather name="share-2" size={14} color="#C9A84C" />
+        <Text style={[styles.screenTitle, { color: colors.text }]}>The Identity</Text>
+        <TouchableOpacity style={[styles.iconBtn, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <Feather name="share-2" size={14} color={colors.primary} />
         </TouchableOpacity>
       </View>
 
@@ -158,29 +209,29 @@ export default function IdentityScreen() {
             ))}
           </View>
           <View style={styles.styleCardContent}>
-            <Text style={styles.styleCardKeyword}>Effortless</Text>
+            <Text style={[styles.styleCardKeyword, { color: colors.text }]}>Effortless</Text>
             <View style={styles.styleCardStats}>
               <View style={styles.statItem}>
-                <Text style={styles.statNum}>47</Text>
-                <Text style={styles.statLabel}>items</Text>
+                <Text style={[styles.statNum, { color: colors.text }]}>47</Text>
+                <Text style={[styles.statLabel, { color: colors.mutedForeground }]}>items</Text>
               </View>
-              <View style={styles.statDivider} />
+              <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
               <View style={styles.statItem}>
-                <Text style={styles.statNum}>23</Text>
-                <Text style={styles.statLabel}>outfits</Text>
+                <Text style={[styles.statNum, { color: colors.text }]}>23</Text>
+                <Text style={[styles.statLabel, { color: colors.mutedForeground }]}>outfits</Text>
               </View>
-              <View style={styles.statDivider} />
+              <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
               <View style={styles.statItem}>
-                <Text style={styles.statNum}>89%</Text>
-                <Text style={styles.statLabel}>utilised</Text>
+                <Text style={[styles.statNum, { color: colors.text }]}>89%</Text>
+                <Text style={[styles.statLabel, { color: colors.mutedForeground }]}>utilised</Text>
               </View>
             </View>
             <TouchableOpacity
-              style={styles.exportBtn}
+              style={[styles.exportBtn, { borderColor: colors.brassSubtle, backgroundColor: colors.brassGlow }]}
               onPress={() => ReactNativeHapticFeedback.trigger("impactLight")}
             >
-              <Feather name="download" size={11} color="#C9A84C" />
-              <Text style={styles.exportBtnText}>export style card</Text>
+              <Feather name="download" size={11} color={colors.primary} />
+              <Text style={[styles.exportBtnText, { color: colors.primary }]}>export style card</Text>
             </TouchableOpacity>
           </View>
           <View style={styles.styleCardOverlay} />
@@ -188,8 +239,8 @@ export default function IdentityScreen() {
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Style DNA</Text>
-            <Text style={styles.sectionSub}>updated monthly</Text>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Style DNA</Text>
+            <Text style={[styles.sectionSub, { color: colors.mutedForeground }]}>updated monthly</Text>
           </View>
           <View style={[styles.radarContainer, { height: radarSize }]}>
             <View style={styles.radarBackground}>
@@ -202,6 +253,7 @@ export default function IdentityScreen() {
                       width: radarRadius * 2 * scale,
                       height: radarRadius * 2 * scale,
                       borderRadius: radarRadius * scale,
+                      borderColor: colors.border,
                     },
                   ]}
                 />
@@ -224,6 +276,7 @@ export default function IdentityScreen() {
                         width: radarRadius,
                         height: 0.5,
                         transformOrigin: "left center",
+                        backgroundColor: colors.border,
                         transform: [
                           { rotate: `${(i / RADAR_DIMS.length) * 360 - 90}deg` },
                         ],
@@ -237,6 +290,7 @@ export default function IdentityScreen() {
                         position: "absolute",
                         left: labelPoint.x - 30,
                         top: labelPoint.y - 8,
+                        color: colors.mutedForeground,
                       },
                     ]}
                   >
@@ -261,6 +315,7 @@ export default function IdentityScreen() {
                         top: pt.y - size / 2,
                         width: size,
                         height: size,
+                        backgroundColor: colors.primary,
                       },
                     ]}
                   />
@@ -272,34 +327,34 @@ export default function IdentityScreen() {
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Reusability</Text>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Reusability</Text>
             <View style={styles.sustainRow}>
               <Feather name="wind" size={13} color="#6A9A6A" />
-              <Text style={styles.sustainScore}>89%</Text>
-              <Text style={styles.sustainLabel}>wardrobe value unlocked</Text>
+              <Text style={[styles.sustainScore, { color: '#6A9A6A' }]}>89%</Text>
+              <Text style={[styles.sustainLabel, { color: colors.mutedForeground }]}>wardrobe value unlocked</Text>
             </View>
           </View>
 
-          <Text style={[styles.subLabel, { color: "#C9A84C" }]}>most loved</Text>
+          <Text style={[styles.subLabel, { color: colors.primary }]}>most loved</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.itemRail}>
             {mostLoved.map((item, i) => (
-              <View key={i} style={[styles.reusabilityCard, styles.lovedCard]}>
+              <View key={i} style={[styles.reusabilityCard, styles.lovedCard, { backgroundColor: theme === 'dark' ? '#161208' : colors.card, borderColor: colors.brassSubtle }]}>
                 <View style={[styles.reusabilityBlock, { backgroundColor: item.color }]} />
-                <Text style={styles.reusabilityName} numberOfLines={2}>{item.name}</Text>
-                <Text style={styles.reusabilityTimes}>{item.times}× worn</Text>
+                <Text style={[styles.reusabilityName, { color: colors.text }]} numberOfLines={2}>{item.name}</Text>
+                <Text style={[styles.reusabilityTimes, { color: colors.primary }]}>{item.times}× worn</Text>
               </View>
             ))}
           </ScrollView>
 
-          <Text style={[styles.subLabel, { color: "#A3A3A3" }]}>collecting dust</Text>
+          <Text style={[styles.subLabel, { color: colors.mutedForeground }]}>collecting dust</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.itemRail}>
             {dusty.map((item, i) => (
-              <View key={i} style={[styles.reusabilityCard, styles.dustyCard]}>
+              <View key={i} style={[styles.reusabilityCard, styles.dustyCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
                 <View style={[styles.reusabilityBlock, { backgroundColor: item.color, opacity: 0.5 }]} />
-                <Text style={[styles.reusabilityName, { opacity: 0.6 }]} numberOfLines={2}>
+                <Text style={[styles.reusabilityName, { color: colors.text, opacity: 0.6 }]} numberOfLines={2}>
                   {item.name}
                 </Text>
-                <Text style={[styles.reusabilityTimes, { color: "#444" }]}>{item.times}× worn</Text>
+                <Text style={[styles.reusabilityTimes, { color: colors.mutedForeground }]}>{item.times}× worn</Text>
               </View>
             ))}
           </ScrollView>
@@ -307,24 +362,36 @@ export default function IdentityScreen() {
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Year in Style</Text>
-            <Text style={styles.sectionSub}>2025 — 2026</Text>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Year in Style</Text>
+            <Text style={[styles.sectionSub, { color: colors.mutedForeground }]}>2025 — 2026</Text>
           </View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.yearRail}>
             {YEAR_IN_STYLE.map((card, i) => (
-              <View key={i} style={[styles.yearCard, { backgroundColor: card.color }]}>
-                <Text style={styles.yearCardLabel}>{card.label}</Text>
-                <Text style={styles.yearCardStat}>{card.stat}</Text>
-                <Text style={styles.yearCardValue}>{card.value}</Text>
-                <Text style={styles.yearCardCopy}>{card.copy}</Text>
+              <View key={i} style={[styles.yearCard, { backgroundColor: theme === 'dark' ? card.color : colors.card, borderColor: colors.border }]}>
+                <Text style={[styles.yearCardLabel, { color: colors.mutedForeground }]}>{card.label}</Text>
+                <Text style={[styles.yearCardStat, { color: colors.primary }]}>{card.stat}</Text>
+                <Text style={[styles.yearCardValue, { color: colors.text }]}>{card.value}</Text>
+                <Text style={[styles.yearCardCopy, { color: colors.mutedForeground }]}>{card.copy}</Text>
               </View>
             ))}
           </ScrollView>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Settings</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Settings</Text>
           <View style={styles.settingsTiles}>
+            <View style={[styles.settingsTile, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <View style={[styles.settingsTileIcon, { backgroundColor: colors.brassSubtle, borderColor: colors.brassGlow }]}>
+                <Feather name={theme === 'dark' ? "moon" : "sun"} size={16} color={colors.primary} />
+              </View>
+              <Text style={[styles.settingsTileLabel, { color: colors.text }]}>Appearance</Text>
+              <Text style={[styles.settingsTileStatus, { color: colors.mutedForeground }]}>{theme === 'dark' ? 'Dark Mode' : 'Beige & Sage'}</Text>
+              <CylindricalToggle 
+                value={theme === 'light'} 
+                onValueChange={(v) => setTheme(v ? 'light' : 'dark')} 
+              />
+            </View>
+
             {settingsData.map((tile) => (
               <TouchableOpacity
                 key={tile.label}
@@ -332,14 +399,14 @@ export default function IdentityScreen() {
                   ReactNativeHapticFeedback.trigger("impactLight");
                   setSettingsModal(tile.label);
                 }}
-                style={styles.settingsTile}
+                style={[styles.settingsTile, { backgroundColor: colors.card, borderColor: colors.border }]}
               >
-                <View style={styles.settingsTileIcon}>
-                  <Feather name={tile.icon as any} size={16} color="#C9A84C" />
+                <View style={[styles.settingsTileIcon, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                  <Feather name={tile.icon as any} size={16} color={colors.primary} />
                 </View>
-                <Text style={styles.settingsTileLabel}>{tile.label}</Text>
-                <Text style={styles.settingsTileStatus} numberOfLines={1}>{tile.status}</Text>
-                <Feather name="chevron-right" size={13} color="#777" style={{ marginLeft: "auto" }} />
+                <Text style={[styles.settingsTileLabel, { color: colors.text }]}>{tile.label}</Text>
+                <Text style={[styles.settingsTileStatus, { color: colors.mutedForeground }]} numberOfLines={1}>{tile.status}</Text>
+                <Feather name="chevron-right" size={13} color={colors.mutedForeground} style={{ marginLeft: "auto" }} />
               </TouchableOpacity>
             ))}
           </View>
@@ -352,11 +419,11 @@ export default function IdentityScreen() {
           activeOpacity={1}
           onPress={closeSettings}
         />
-        <View style={styles.settingsSheet}>
-          <View style={styles.sheetHandle} />
-          <Text style={styles.settingsSheetTitle}>{settingsModal}</Text>
+        <View style={[styles.settingsSheet, { backgroundColor: colors.card }]}>
+          <View style={[styles.sheetHandle, { backgroundColor: colors.border }]} />
+          <Text style={[styles.settingsSheetTitle, { color: colors.text }]}>{settingsModal}</Text>
           <View style={styles.settingsSheetBody}>
-            <Text style={styles.settingsSheetNote}>
+            <Text style={[styles.settingsSheetNote, { color: colors.text }]}>
               {settingsModal === "Calendar Sync"
                 ? "Seamlessly integrate your daily agenda to let ZORA suggest event-appropriate outfits."
                 : settingsModal === "Mirror Connect"
@@ -370,14 +437,16 @@ export default function IdentityScreen() {
               <TouchableOpacity
                 style={[
                   styles.linkButton,
-                  (isLinking || linkSuccess) && { backgroundColor: "#C9A84C", borderColor: "#C9A84C" }
+                  { borderColor: colors.brassSubtle },
+                  (isLinking || linkSuccess) && { backgroundColor: colors.primary, borderColor: colors.primary }
                 ]}
                 onPress={handleLinkAccount}
                 disabled={isLinking || linkSuccess}
               >
                 <Text style={[
                   styles.linkButtonText,
-                  (isLinking || linkSuccess) && { color: "#0A0A0A" }
+                  { color: colors.primary },
+                  (isLinking || linkSuccess) && { color: colors.primaryForeground }
                 ]}>
                   {isLinking ? "authenticating securely..." : linkSuccess ? "successfully linked" : "connect new account"}
                 </Text>
@@ -386,10 +455,10 @@ export default function IdentityScreen() {
 
           </View>
           <TouchableOpacity
-            style={styles.settingsSheetClose}
+            style={[styles.settingsSheetClose, { backgroundColor: colors.primary }]}
             onPress={closeSettings}
           >
-            <Text style={styles.settingsSheetCloseText}>done</Text>
+            <Text style={[styles.settingsSheetCloseText, { color: colors.primaryForeground }]}>done</Text>
           </TouchableOpacity>
         </View>
       </Modal>
@@ -757,5 +826,22 @@ const styles = StyleSheet.create({
     color: "#C9A84C",
     letterSpacing: 1.5,
     textTransform: "uppercase",
+  },
+  customToggleTrack: {
+    width: 48,
+    height: 26,
+    borderRadius: 13,
+    padding: 2,
+    justifyContent: "center",
+  },
+  customToggleThumb: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 2,
   },
 });
