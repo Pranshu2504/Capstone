@@ -290,5 +290,4 @@ error.log
 *.temp
 
 # Developer Local Overrides
-frontend/android/build.gradle
-frontend/metro.config.js
+
