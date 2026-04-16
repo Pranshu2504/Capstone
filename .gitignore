@@ -46,8 +46,6 @@ pnpm-debug.log*
 package-lock.json
 yarn.lock
 pnpm-lock.yaml
-
-
 # ───────────────────────────────────────────────
 # REACT NATIVE
 # ───────────────────────────────────────────────
@@ -290,3 +288,7 @@ error.log
 *.orig
 *.tmp
 *.temp
+
+# Developer Local Overrides
+frontend/android/build.gradle
+frontend/metro.config.js
