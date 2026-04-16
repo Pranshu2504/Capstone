@@ -9,20 +9,21 @@ import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Feather from 'react-native-vector-icons/Feather';
 
-import { ErrorBoundary } from './src/components/ErrorBoundary';
-import { useColors } from './src/hooks/useColors';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { useColors } from '@/hooks/useColors';
+import { ThemeProvider, useTheme } from '@/context/ThemeContext';
 
-import DoorScreen from './src/screens/DoorScreen';
-import InterviewScreen from './src/screens/InterviewScreen';
-import MirrorScreen from './src/screens/tabs/MirrorScreen';
-import WardrobeScreen from './src/screens/tabs/WardrobeScreen';
-import LensScreen from './src/screens/tabs/LensScreen';
-import CalendarScreen from './src/screens/tabs/CalendarScreen';
-import PulseScreen from './src/screens/tabs/PulseScreen';
-import IdentityScreen from './src/screens/tabs/IdentityScreen';
-import ChatbotScreen from './src/screens/ChatbotScreen';
-import FriendsScreen from './src/screens/FriendsScreen';
-import ForYouScreen from './src/screens/ForYouScreen';
+import DoorScreen from '@/screens/DoorScreen';
+import InterviewScreen from '@/screens/InterviewScreen';
+import MirrorScreen from '@/screens/tabs/MirrorScreen';
+import WardrobeScreen from '@/screens/tabs/WardrobeScreen';
+import LensScreen from '@/screens/tabs/LensScreen';
+import CalendarScreen from '@/screens/tabs/CalendarScreen';
+import PulseScreen from '@/screens/tabs/PulseScreen';
+import IdentityScreen from '@/screens/tabs/IdentityScreen';
+import ChatbotScreen from '@/screens/ChatbotScreen';
+import FriendsScreen from '@/screens/FriendsScreen';
+import ForYouScreen from '@/screens/ForYouScreen';
 export type RootStackParamList = {
   Door: undefined;
   Interview: undefined;
@@ -42,14 +43,22 @@ const zoraAvatar = require('./assets/images/zora_avatar.png');
 const ChatbotButton = () => {
   const colors = useColors();
   const navigation = useNavigation<any>();
+  const { theme } = useTheme();
+
   return (
     <TouchableOpacity 
-      style={[styles.chatbotButton, { borderColor: 'rgba(191, 153, 90, 0.4)' }]}
+      style={[
+        styles.chatbotButton, 
+        { 
+          backgroundColor: theme === 'dark' ? 'rgba(20, 20, 20, 0.95)' : colors.card,
+          borderColor: theme === 'dark' ? 'rgba(201,168,76,0.3)' : colors.border 
+        }
+      ]}
       activeOpacity={0.8}
       onPress={() => navigation.navigate('Chatbot')}
     >
       <Image source={zoraAvatar} style={styles.chatbotAvatar} />
-      <Text style={[styles.chatbotText, { color: colors.brass }]}>Ask Zora</Text>
+      <Text style={[styles.chatbotText, { color: colors.primary }]}>Ask Zora</Text>
     </TouchableOpacity>
   );
 };
@@ -60,19 +69,20 @@ function TabNavigator() {
   const insets = useSafeAreaInsets();
   
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
       <Tab.Navigator
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: colors.brass,
-        tabBarInactiveTintColor: '#777777',
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.mutedForeground,
         tabBarStyle: {
-          backgroundColor: '#0D0D0D',
+          backgroundColor: colors.background,
           borderTopWidth: StyleSheet.hairlineWidth,
-          borderTopColor: '#1A1A1A',
+          borderTopColor: colors.border,
           height: Platform.OS === 'android' ? 74 : 84,
           paddingBottom: Platform.OS === 'android' ? 10 : 20,
           paddingTop: 8,
+          elevation: 0,
         },
         tabBarLabelStyle: {
           fontFamily: 'Inter_400Regular',
@@ -162,7 +172,11 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   }
 });
-export default function App() {
+function AppContent() {
+  const { isLoaded } = useTheme();
+
+  if (!isLoaded) return null; // Or a splash screen
+
   return (
     <SafeAreaProvider>
       <ErrorBoundary>
@@ -185,5 +199,13 @@ export default function App() {
         </QueryClientProvider>
       </ErrorBoundary>
     </SafeAreaProvider>
+  );
+}
+
+export default function App() {
+  return (
+    <ThemeProvider>
+      <AppContent />
+    </ThemeProvider>
   );
 }

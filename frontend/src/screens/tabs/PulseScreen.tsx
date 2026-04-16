@@ -13,6 +13,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import Feather from "react-native-vector-icons/Feather";
 import ReactNativeHapticFeedback from "react-native-haptic-feedback";
+import { useColors } from "@/hooks/useColors";
+import { useTheme } from "@/context/ThemeContext";
 
 const { width } = Dimensions.get("window");
 
@@ -50,6 +52,8 @@ const FRIENDS_ACTIVITY = [
 ];
 
 export default function PulseScreen() {
+  const colors = useColors();
+  const { theme } = useTheme();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
   const [feedMode, setFeedMode] = useState<FeedMode>("trending");
@@ -70,23 +74,23 @@ export default function PulseScreen() {
   const rightCol = filteredPosts.filter((_, i) => i % 2 !== 0);
 
   return (
-    <View style={[styles.container]}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { paddingTop: topPad + 8 }]}>
         <Text style={styles.screenTitle}>The Pulse</Text>
         <View style={styles.headerIcons}>
-          <TouchableOpacity style={styles.iconBtn}>
-            <Feather name="search" size={14} color="#C9A84C" />
+          <TouchableOpacity style={[styles.iconBtn, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <Feather name="search" size={14} color={colors.primary} />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.iconBtn}>
-            <Feather name="sliders" size={14} color="#C9A84C" />
+          <TouchableOpacity style={[styles.iconBtn, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <Feather name="sliders" size={14} color={colors.primary} />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate("Identity")}>
-            <Feather name="user" size={14} color="#C9A84C" />
+          <TouchableOpacity style={[styles.iconBtn, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={() => navigation.navigate("Identity")}>
+            <Feather name="user" size={14} color={colors.primary} />
           </TouchableOpacity>
         </View>
       </View>
 
-      <View style={styles.toggleContainer}>
+      <View style={[styles.toggleContainer, { backgroundColor: colors.card, borderColor: colors.border }]}>
         {(["trending", "friends", "for you"] as FeedMode[]).map((mode) => (
           <TouchableOpacity
             key={mode}
@@ -100,9 +104,9 @@ export default function PulseScreen() {
                 setFeedMode(mode);
               }
             }}
-            style={[styles.togglePill, feedMode === mode && styles.togglePillActive]}
+            style={[styles.togglePill, feedMode === mode && [styles.togglePillActive, { backgroundColor: colors.primary }]]}
           >
-            <Text style={[styles.togglePillText, feedMode === mode && styles.togglePillTextActive]}>
+            <Text style={[styles.togglePillText, { color: colors.mutedForeground }, feedMode === mode && [styles.togglePillTextActive, { color: colors.primaryForeground }]]}>
               {mode}
             </Text>
           </TouchableOpacity>
@@ -133,7 +137,8 @@ export default function PulseScreen() {
                   }}
                   style={[
                     styles.vibePill,
-                    isActive && { backgroundColor: "#1F1A0D", borderColor: "#C9A84C" },
+                    { backgroundColor: colors.card, borderColor: colors.border },
+                    isActive && { backgroundColor: colors.surface, borderColor: colors.primary },
                   ]}
                 >
                   <View style={styles.microPalette}>
@@ -141,7 +146,7 @@ export default function PulseScreen() {
                       <View key={i} style={[styles.microSwatch, { backgroundColor: c }]} />
                     ))}
                   </View>
-                  <Text style={[styles.vibeName, isActive && { color: "#C9A84C" }]}>
+                  <Text style={[styles.vibeName, { color: colors.text }, isActive && { color: colors.primary }]}>
                     {vibe.name}
                   </Text>
                 </TouchableOpacity>
@@ -152,10 +157,10 @@ export default function PulseScreen() {
         </View>
 
         {activeVibe && (
-          <View style={styles.vibeFilterBar}>
-            <Text style={styles.vibeFilterText}>showing: {activeVibe}</Text>
+          <View style={[styles.vibeFilterBar, { backgroundColor: colors.brassSubtle }]}>
+            <Text style={[styles.vibeFilterText, { color: colors.primary }]}>showing: {activeVibe}</Text>
             <TouchableOpacity onPress={() => setActiveVibe(null)}>
-              <Text style={styles.vibeFilterClear}>clear</Text>
+              <Text style={[styles.vibeFilterClear, { color: colors.mutedForeground }]}>clear</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -230,14 +235,14 @@ export default function PulseScreen() {
           </View>
         </View>
 
-        <View style={styles.radarCard}>
+        <View style={[styles.radarCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <View style={styles.radarHeader}>
             <View>
-              <Text style={styles.radarTitle}>trend radar</Text>
-              <Text style={styles.radarSub}>this week's momentum</Text>
+              <Text style={[styles.radarTitle, { color: colors.text }]}>trend radar</Text>
+              <Text style={[styles.radarSub, { color: colors.mutedForeground }]}>this week's momentum</Text>
             </View>
-            <View style={styles.liveBadge}>
-              <Text style={styles.liveText}>live</Text>
+            <View style={[styles.liveBadge, { backgroundColor: colors.brassSubtle }]}>
+              <Text style={[styles.liveText, { color: colors.primary }]}>live</Text>
             </View>
           </View>
           {TRENDS.map((trend, i) => (
@@ -246,14 +251,14 @@ export default function PulseScreen() {
               onPress={() => setTrendSheetName(trend.name)}
               style={styles.trendRow}
             >
-              <Text style={styles.trendName}>{trend.name}</Text>
-              <View style={styles.trendBar}>
-                <View style={[styles.trendBarFill, { width: `${trend.bar * 100}%` as any }]} />
+              <Text style={[styles.trendName, { color: colors.text }]}>{trend.name}</Text>
+              <View style={[styles.trendBar, { backgroundColor: colors.surface }]}>
+                <View style={[styles.trendBarFill, { width: `${trend.bar * 100}%` as any, backgroundColor: colors.primary }]} />
               </View>
               <Text
                 style={[
                   styles.trendDelta,
-                  { color: trend.positive ? "#C9A84C" : "#A3A3A3" },
+                  { color: trend.positive ? colors.primary : colors.mutedForeground },
                 ]}
               >
                 {trend.delta}

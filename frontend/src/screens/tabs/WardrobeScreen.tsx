@@ -12,38 +12,19 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
+import { useTheme } from '@/context/ThemeContext';
 import Feather from 'react-native-vector-icons/Feather';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
 import { useColors } from '@/hooks/useColors';
 
-// ─── Design Tokens ───────────────────────────────────────────────────────────
-const C = {
-  bg: '#0E0B07',
-  headerBg: '#1A1208',
-  headerBorder: '#2A1E0A',
-  healthBg: '#120F08',
-  healthBorder: '#1E1608',
-  brass: '#C9A84C',
-  card: '#141008',
-  cardBorder: '#2A1E0A',
-  surfaceShelf: '#0F0C07',
-  surfaceRack: '#0D0A06',
-  green: '#7ABA7A',
-  warmWhite: '#E0D8CC',
-  lightWarm: '#F0ECE4',
-  muted555: '#999999',
-  muted888: '#BBBBBB',
-  muted444: '#BBBBBB',
-  muted666: '#AAAAAA',
-  warnBg: '#2A1010',
-  warnText: '#AA6060',
-  warnBorder: '#3A1A1A',
-  trackBg: '#1E1E1E',
-  rod: '#3A2A10',
-  pill: '#181208',
-  pillBorder: '#2A1E0A',
-};
+// Design elements that should stay "woody" or specific to the closet vibe
+const getWoodTone = (theme: 'light' | 'dark') => ({
+  rod: theme === 'dark' ? '#3A2A10' : '#8B7355',
+  shelf: theme === 'dark' ? '#1A1208' : '#E8E4DD',
+  bracket: theme === 'dark' ? 'rgba(201,168,76,0.27)' : 'rgba(122,139,111,0.27)',
+  bracketBorder: theme === 'dark' ? 'rgba(201,168,76,0.4)' : 'rgba(122,139,111,0.4)',
+});
 
 // ─── Static Data ─────────────────────────────────────────────────────────────
 const FILTER_PILLS = ['all', 'casual', 'formal', 'neutral', 'indian', 'unused', 'seasonal'];
@@ -96,33 +77,38 @@ const WEAR_DOTS = [
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 function SectionHeader({ title, count }: { title: string; count: number }) {
+  const colors = useColors();
   return (
     <View style={sh.row}>
-      <View style={sh.accent} />
-      <Text style={sh.title}>{title.toUpperCase()}</Text>
-      <Text style={sh.count}>{count} items</Text>
+      <View style={[sh.accent, { backgroundColor: colors.primary }]} />
+      <Text style={[sh.title, { color: colors.text }]}>{title.toUpperCase()}</Text>
+      <Text style={[sh.count, { color: colors.mutedForeground }]}>{count} items</Text>
       <TouchableOpacity>
-        <Text style={sh.seeAll}>see all</Text>
+        <Text style={[sh.seeAll, { color: colors.primary }]}>see all</Text>
       </TouchableOpacity>
     </View>
   );
 }
 const sh = StyleSheet.create({
   row:    { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 4, paddingTop: 22, paddingBottom: 10 },
-  accent: { width: 2, height: 12, backgroundColor: C.brass, marginRight: 6 },
-  title:  { fontFamily: 'Inter_500Medium', fontSize: 11, color: C.warmWhite, letterSpacing: 0.55, flex: 1 },
-  count:  { fontFamily: 'Inter_400Regular', fontSize: 9, color: C.muted555, marginRight: 8 },
-  seeAll: { fontFamily: 'Inter_400Regular', fontSize: 9, color: C.brass },
+  accent: { width: 2, height: 12, marginRight: 6 },
+  title:  { fontFamily: 'Inter_500Medium', fontSize: 11, letterSpacing: 0.55, flex: 1 },
+  count:  { fontFamily: 'Inter_400Regular', fontSize: 9, color: '#999999', marginRight: 8 },
+  seeAll: { fontFamily: 'Inter_400Regular', fontSize: 9 },
 });
 
 function RailCard({ children, showRod = true }: { children: React.ReactNode; showRod?: boolean }) {
+  const colors = useColors();
+  const { theme } = useTheme();
+  const woods = getWoodTone(theme as any);
+
   return (
-    <View style={rc.card}>
+    <View style={[rc.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
       {showRod && (
         <View style={rc.rodWrapper}>
-          <View style={rc.rodBar} />
-          <View style={rc.bracketL} />
-          <View style={rc.bracketR} />
+          <View style={[rc.rodBar, { backgroundColor: woods.rod }]} />
+          <View style={[rc.bracketL, { backgroundColor: woods.bracket, borderColor: woods.bracketBorder }]} />
+          <View style={[rc.bracketR, { backgroundColor: woods.bracket, borderColor: woods.bracketBorder }]} />
         </View>
       )}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={rc.scroll}>
@@ -132,9 +118,9 @@ function RailCard({ children, showRod = true }: { children: React.ReactNode; sho
   );
 }
 const rc = StyleSheet.create({
-  card:       { backgroundColor: C.card, borderRadius: 14, borderWidth: 0.5, borderColor: C.cardBorder, padding: 14 },
+  card:       { backgroundColor: '#111111', borderRadius: 14, borderWidth: 0.5, borderColor: '#2A1E0A', padding: 14 },
   rodWrapper: { height: 6, marginBottom: 10 },
-  rodBar:     { position: 'absolute', left: 0, right: 0, top: 3, height: 3, backgroundColor: C.rod, borderRadius: 2 },
+  rodBar:     { position: 'absolute', left: 0, right: 0, top: 3, height: 3, backgroundColor: '#3A2A10', borderRadius: 2 },
   bracketL:   { position: 'absolute', left: 10, top: 0, width: 6, height: 6, borderRadius: 3, backgroundColor: 'rgba(201,168,76,0.27)', borderWidth: 1, borderColor: 'rgba(201,168,76,0.4)' },
   bracketR:   { position: 'absolute', right: 10, top: 0, width: 6, height: 6, borderRadius: 3, backgroundColor: 'rgba(201,168,76,0.27)', borderWidth: 1, borderColor: 'rgba(201,168,76,0.4)' },
   scroll:     { gap: 8, alignItems: 'flex-start' },
@@ -143,40 +129,46 @@ const rc = StyleSheet.create({
 function HangerItem({
   name, bg, stroke, wears, cat, isDress,
 }: { name: string; bg: string; stroke: string; wears: number; cat: string; isDress?: boolean }) {
+  const colors = useColors();
+  const { theme } = useTheme();
+  const woods = getWoodTone(theme as any);
   const lowWear = wears <= 1;
+
   return (
     <View style={hng.wrapper}>
-      <View style={hng.hook} />
-      <View style={hng.bar} />
-      <View style={[hng.card, { backgroundColor: bg }, lowWear && hng.cardWarn]}>
+      <View style={[hng.hook, { backgroundColor: woods.bracketBorder }]} />
+      <View style={[hng.bar, { backgroundColor: woods.rod }]} />
+      <View style={[hng.card, { backgroundColor: bg }, lowWear && { borderColor: colors.destructive }]}>
         <Feather name={isDress ? 'user' : 'shopping-bag'} size={20} color={stroke} />
-        <View style={[hng.badge, lowWear && hng.badgeWarn]}>
-          <Text style={[hng.badgeText, lowWear && hng.badgeTextWarn]}>{wears}×</Text>
+        <View style={[hng.badge, lowWear && { backgroundColor: theme === 'dark' ? '#2A1010' : colors.destructive + '22' }]}>
+          <Text style={[hng.badgeText, { color: colors.primary }, lowWear && { color: colors.destructive }]}>{wears}×</Text>
         </View>
       </View>
-      <Text style={hng.name} numberOfLines={1}>{name}</Text>
-      <Text style={hng.cat}>{cat}</Text>
+      <Text style={[hng.name, { color: colors.text }]} numberOfLines={1}>{name}</Text>
+      <Text style={[hng.cat, { color: colors.mutedForeground }]}>{cat}</Text>
     </View>
   );
 }
 const hng = StyleSheet.create({
   wrapper:       { width: 78, alignItems: 'center' },
   hook:          { width: 2, height: 10, backgroundColor: 'rgba(201,168,76,0.33)' },
-  bar:           { width: 52, height: 2, backgroundColor: C.rod, marginBottom: 6 },
+  bar:           { width: 52, height: 2, backgroundColor: '#3A2A10', marginBottom: 6 },
   card:          { width: 72, height: 84, borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 0.5, borderColor: 'transparent' },
   cardWarn:      { borderColor: '#3A1A1A' },
   badge:         { position: 'absolute', top: 4, right: 4, backgroundColor: 'rgba(10,10,10,0.6)', borderRadius: 5, paddingHorizontal: 4, paddingVertical: 1 },
-  badgeWarn:     { backgroundColor: C.warnBg },
-  badgeText:     { fontSize: 7, fontFamily: 'Inter_400Regular', color: C.brass },
-  badgeTextWarn: { color: C.warnText },
-  name:          { fontFamily: 'Inter_400Regular', fontSize: 8, color: C.muted888, marginTop: 6, maxWidth: 76, textAlign: 'center' },
-  cat:           { fontFamily: 'Inter_400Regular', fontSize: 7, color: C.muted444, marginTop: 2 },
+  badgeText:     { fontSize: 7, fontFamily: 'Inter_400Regular' },
+  name:          { fontFamily: 'Inter_400Regular', fontSize: 8, color: '#BBBBBB', marginTop: 6, maxWidth: 76, textAlign: 'center' },
+  cat:           { fontFamily: 'Inter_400Regular', fontSize: 7, color: '#BBBBBB', marginTop: 2 },
 });
 
 function ShelfCard({ children }: { children: React.ReactNode }) {
+  const colors = useColors();
+  const { theme } = useTheme();
+  const woods = getWoodTone(theme as any);
+
   return (
-    <View style={sc.card}>
-      <View style={sc.shelf} />
+    <View style={[sc.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+      <View style={[sc.shelf, { backgroundColor: woods.shelf }]} />
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={sc.scroll}>
         {children}
       </ScrollView>
@@ -184,36 +176,36 @@ function ShelfCard({ children }: { children: React.ReactNode }) {
   );
 }
 const sc = StyleSheet.create({
-  card:  { backgroundColor: C.surfaceShelf, borderRadius: 14, borderWidth: 0.5, borderColor: C.cardBorder, padding: 14 },
-  shelf: { height: 3, backgroundColor: C.cardBorder, marginBottom: 12, borderRadius: 1.5 },
+  card:  { backgroundColor: '#0F0C07', borderRadius: 14, borderWidth: 0.5, borderColor: '#2A1E0A', padding: 14 },
+  shelf: { height: 3, backgroundColor: '#2A1E0A', marginBottom: 12, borderRadius: 1.5 },
   scroll:{ gap: 8, alignItems: 'flex-start' },
 });
 
 function FoldedItem({ name, bg, wears }: { name: string; bg: string; wears: number }) {
+  const colors = useColors();
   const lowWear = wears === 0;
   return (
     <View style={fi.wrapper}>
       <View style={[fi.fold, { backgroundColor: bg }]}>
-        <Feather name="minus" size={18} color={lowWear ? C.warnText : C.muted555} />
-        <Text style={[fi.wears, lowWear && fi.wearsWarn]}>{wears}×</Text>
+        <Feather name="minus" size={18} color={lowWear ? colors.destructive : colors.mutedForeground} />
+        <Text style={[fi.wears, { color: colors.mutedForeground }, lowWear && { color: colors.destructive }]}>{wears}×</Text>
       </View>
-      <Text style={[fi.name, lowWear && fi.nameWarn]} numberOfLines={1}>{name}</Text>
+      <Text style={[fi.name, { color: colors.text }, lowWear && { color: colors.destructive }]} numberOfLines={1}>{name}</Text>
     </View>
   );
 }
 const fi = StyleSheet.create({
   wrapper:   { width: 80, alignItems: 'center' },
   fold:      { width: 80, height: 62, borderRadius: 10, alignItems: 'center', justifyContent: 'center', gap: 6 },
-  wears:     { fontFamily: 'Inter_400Regular', fontSize: 8, color: C.muted555 },
-  wearsWarn: { color: C.warnText },
-  name:      { fontFamily: 'Inter_400Regular', fontSize: 8, color: C.muted888, marginTop: 6, maxWidth: 78, textAlign: 'center' },
-  nameWarn:  { color: C.warnText },
+  wears:     { fontFamily: 'Inter_400Regular', fontSize: 8, color: '#999999' },
+  name:      { fontFamily: 'Inter_400Regular', fontSize: 8, color: '#BBBBBB', marginTop: 6, maxWidth: 78, textAlign: 'center' },
 });
 
 function RackCard({ children }: { children: React.ReactNode }) {
+  const colors = useColors();
   return (
-    <View style={rak.card}>
-      <View style={rak.rackLine} />
+    <View style={[rak.card, { backgroundColor: colors.surfaceDim, borderColor: colors.border }]}>
+      <View style={[rak.rackLine, { backgroundColor: colors.border }]} />
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={rak.scroll}>
         {children}
       </ScrollView>
@@ -221,15 +213,16 @@ function RackCard({ children }: { children: React.ReactNode }) {
   );
 }
 const rak = StyleSheet.create({
-  card:     { backgroundColor: C.surfaceRack, borderRadius: 14, borderWidth: 0.5, borderColor: C.cardBorder, padding: 14 },
-  rackLine: { height: 2, backgroundColor: C.cardBorder, marginBottom: 12 },
+  card:     { backgroundColor: '#0D0A06', borderRadius: 14, borderWidth: 0.5, borderColor: '#2A1E0A', padding: 14 },
+  rackLine: { height: 2, backgroundColor: '#2A1E0A', marginBottom: 12 },
   scroll:   { gap: 8, alignItems: 'flex-start' },
 });
 
 
 function OutfitCard({ name, wears, occasion, pieces }: typeof OUTFITS[0]) {
+  const colors = useColors();
   return (
-    <View style={oc.card}>
+    <View style={[oc.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
       <View style={oc.mosaic}>
         {pieces.map((bg, i) => (
           <View key={i} style={[oc.piece, { backgroundColor: bg }]}>
@@ -237,19 +230,19 @@ function OutfitCard({ name, wears, occasion, pieces }: typeof OUTFITS[0]) {
           </View>
         ))}
       </View>
-      <Text style={oc.name} numberOfLines={1}>{name}</Text>
-      <Text style={oc.wears}>{wears}</Text>
-      <Text style={oc.occasion}>{occasion}</Text>
+      <Text style={[oc.name, { color: colors.text }]} numberOfLines={1}>{name}</Text>
+      <Text style={[oc.wears, { color: colors.primary }]}>{wears}</Text>
+      <Text style={[oc.occasion, { color: colors.mutedForeground }]}>{occasion}</Text>
     </View>
   );
 }
 const oc = StyleSheet.create({
-  card:     { width: 108, backgroundColor: '#0E0B07', borderRadius: 12, borderWidth: 0.5, borderColor: '#1E1608', overflow: 'hidden' },
+  card:     { width: 108, borderRadius: 12, borderWidth: 0.5, overflow: 'hidden' },
   mosaic:   { flexDirection: 'row', flexWrap: 'wrap', gap: 2, padding: 6, height: 86 },
   piece:    { width: '47%', flex: 1, minHeight: 36, borderRadius: 4, alignItems: 'center', justifyContent: 'center' },
-  name:     { fontFamily: 'Inter_500Medium', fontSize: 10, color: C.warmWhite, paddingHorizontal: 8, paddingTop: 6 },
-  wears:    { fontFamily: 'Inter_400Regular', fontSize: 8, color: C.brass, paddingHorizontal: 8, paddingTop: 2 },
-  occasion: { fontFamily: 'Inter_400Regular', fontSize: 8, color: C.muted555, paddingHorizontal: 8, paddingBottom: 8, paddingTop: 1 },
+  name:     { fontFamily: 'Inter_500Medium', fontSize: 10, paddingHorizontal: 8, paddingTop: 6 },
+  wears:    { fontFamily: 'Inter_400Regular', fontSize: 8, paddingHorizontal: 8, paddingTop: 2 },
+  occasion: { fontFamily: 'Inter_400Regular', fontSize: 8, paddingHorizontal: 8, paddingBottom: 8, paddingTop: 1 },
 });
 
 // ─── Main Screen ─────────────────────────────────────────────────────────────
@@ -349,39 +342,39 @@ export default function WardrobeScreen() {
   };
 
   return (
-    <View style={[s.root, { paddingTop: topPad }]}>
+    <View style={[s.root, { paddingTop: topPad, backgroundColor: colors.background }]}>
 
       {/* ── Wardrobe Header Bar ── */}
-      <View style={s.headerBar}>
-        <Text style={s.headerTitle}>ZORA · The Wardrobe</Text>
+      <View style={[s.headerBar, { backgroundColor: colors.background, borderBottomColor: colors.border }]}>
+        <Text style={[s.headerTitle, { color: colors.text }]}>ZORA · The Wardrobe</Text>
         <View style={s.headerIcons}>
-          <TouchableOpacity style={s.iconBtn}>
-            <Feather name="search" size={11} color={C.brass} />
+          <TouchableOpacity style={[s.iconBtn, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <Feather name="search" size={11} color={colors.primary} />
           </TouchableOpacity>
-          <TouchableOpacity style={s.iconBtn}>
-            <Feather name="sliders" size={11} color={C.brass} />
+          <TouchableOpacity style={[s.iconBtn, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <Feather name="sliders" size={11} color={colors.primary} />
           </TouchableOpacity>
-          <TouchableOpacity style={s.iconBtn} onPress={() => navigation.navigate('Identity')}>
-            <Feather name="user" size={11} color={C.brass} />
+          <TouchableOpacity style={[s.iconBtn, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={() => navigation.navigate('Identity')}>
+            <Feather name="user" size={11} color={colors.primary} />
           </TouchableOpacity>
         </View>
       </View>
-
+ 
       {/* ── Wardrobe Health Strip ── */}
-      <View style={s.healthStrip}>
-        <Feather name="activity" size={14} color={C.green} style={{ marginRight: 2 }} />
-        <Text style={s.healthLabel}>wardrobe health</Text>
-        <View style={s.trackOuter}>
-          <View style={[s.trackFill, { width: '78%' }]} />
+      <View style={[s.healthStrip, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
+        <Feather name="activity" size={14} color={colors.primary} style={{ marginRight: 2 }} />
+        <Text style={[s.healthLabel, { color: colors.primary }]}>wardrobe health</Text>
+        <View style={[s.trackOuter, { backgroundColor: colors.muted }]}>
+          <View style={[s.trackFill, { width: '78%', backgroundColor: colors.primary }]} />
         </View>
-        <Text style={s.healthPct}>78%</Text>
+        <Text style={[s.healthPct, { color: colors.primary }]}>78%</Text>
       </View>
 
       {/* ── Filter Pill Bar ── */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        style={s.filterBar}
+        style={[s.filterBar, { backgroundColor: colors.background, borderBottomColor: colors.border }]}
         contentContainerStyle={s.filterScroll}
       >
         {FILTER_PILLS.map((pill) => {
@@ -390,9 +383,9 @@ export default function WardrobeScreen() {
             <TouchableOpacity
               key={pill}
               onPress={() => handleFilterPress(pill)}
-              style={[s.pill, active ? [s.pillActive, { backgroundColor: colors.brass }] : s.pillInactive]}
+              style={[s.pill, active ? [s.pillActive, { backgroundColor: colors.primary }] : [s.pillInactive, { backgroundColor: colors.card, borderColor: colors.border }]]}
             >
-              <Text style={[s.pillText, active ? s.pillTextActive : s.pillTextInactive]}>
+              <Text style={[s.pillText, active ? { color: colors.primaryForeground } : { color: colors.mutedForeground }]}>
                 {pill}
               </Text>
             </TouchableOpacity>
@@ -408,24 +401,24 @@ export default function WardrobeScreen() {
 
         {/* Add to Wardrobe Strip */}
         <View style={[s.addStrip, { marginTop: 16, marginBottom: 4 }]}>
-          <TouchableOpacity style={s.addCardPrimary} activeOpacity={0.85} onPress={handleCamera}>
-            <Feather name="camera" size={16} color="#0A0A0A" />
-            <Text style={s.addCardPrimaryText}>photograph it</Text>
+          <TouchableOpacity style={[s.addCardPrimary, { backgroundColor: colors.primary }]} activeOpacity={0.85} onPress={handleCamera}>
+            <Feather name="camera" size={16} color={colors.primaryForeground} />
+            <Text style={[s.addCardPrimaryText, { color: colors.primaryForeground }]}>photograph it</Text>
           </TouchableOpacity>
           <TouchableOpacity 
-            style={s.addCardSecondary} 
+            style={[s.addCardSecondary, { backgroundColor: colors.card, borderColor: colors.border }]} 
             activeOpacity={0.85}
             onPress={() => {
               ReactNativeHapticFeedback.trigger('impactLight');
               setShowImportModal(true);
             }}
           >
-            <Feather name="link" size={14} color={C.muted888} />
-            <Text style={s.addCardSecondaryText}>import link</Text>
+            <Feather name="link" size={14} color={colors.primary} />
+            <Text style={[s.addCardSecondaryText, { color: colors.mutedForeground }]}>import link</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={s.addCardSecondary} activeOpacity={0.85} onPress={handleGallery}>
-            <Feather name="image" size={14} color={C.muted888} />
-            <Text style={s.addCardSecondaryText}>from gallery</Text>
+          <TouchableOpacity style={[s.addCardSecondary, { backgroundColor: colors.card, borderColor: colors.border }]} activeOpacity={0.85} onPress={handleGallery}>
+            <Feather name="image" size={14} color={colors.primary} />
+            <Text style={[s.addCardSecondaryText, { color: colors.mutedForeground }]}>from gallery</Text>
           </TouchableOpacity>
         </View>
 
@@ -465,26 +458,26 @@ export default function WardrobeScreen() {
         </View>
 
         {/* Section 7: Item Detail Panel */}
-        <View style={s.detailCard}>
-          <View style={s.dragHandle} />
+        <View style={[s.detailCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <View style={[s.dragHandle, { backgroundColor: colors.border }]} />
           {/* Header */}
           <View style={s.detailHeader}>
-            <View style={s.detailThumb}>
-              <Feather name="shopping-bag" size={22} color="#3A5A3A" />
+            <View style={[s.detailThumb, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <Feather name="shopping-bag" size={22} color={colors.primary} />
             </View>
             <View style={s.detailInfo}>
-              <Text style={s.detailName}>sage linen shirt</Text>
+              <Text style={[s.detailName, { color: colors.text }]}>sage linen shirt</Text>
               <View style={s.tagsRow}>
-                <View style={s.tagGold}>
-                  <Text style={s.tagGoldText}>tops</Text>
+                <View style={[s.tagGold, { backgroundColor: colors.brassSubtle, borderColor: colors.primary + '33' }]}>
+                  <Text style={[s.tagGoldText, { color: colors.primary }]}>tops</Text>
                 </View>
                 {['casual', 'linen', 'sage'].map((t) => (
-                  <View key={t} style={s.tag}>
-                    <Text style={s.tagText}>{t}</Text>
+                  <View key={t} style={[s.tag, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                    <Text style={[s.tagText, { color: colors.mutedForeground }]}>{t}</Text>
                   </View>
                 ))}
               </View>
-              <Text style={s.wearsLabel}>12 wears by occasion:</Text>
+              <Text style={[s.wearsLabel, { color: colors.mutedForeground }]}>12 wears by occasion:</Text>
               <View style={s.dotsRow}>
                 {WEAR_DOTS.map((col, i) => (
                   <View key={i} style={[s.dot, { backgroundColor: col }]} />
@@ -494,14 +487,14 @@ export default function WardrobeScreen() {
           </View>
           {/* Actions */}
           <View style={s.actionRow}>
-            <TouchableOpacity style={s.btnTryOn}>
-              <Text style={s.btnTryOnText}>try on</Text>
+            <TouchableOpacity style={[s.btnTryOn, { backgroundColor: colors.primary }]}>
+              <Text style={[s.btnTryOnText, { color: colors.primaryForeground }]}>try on</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={s.btnPair}>
-              <Text style={s.btnPairText}>pair with</Text>
+            <TouchableOpacity style={[s.btnPair, { borderColor: colors.primary + '55' }]}>
+              <Text style={[s.btnPairText, { color: colors.primary }]}>pair with</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={s.btnRemove}>
-              <Text style={s.btnRemoveText}>remove</Text>
+            <TouchableOpacity style={[s.btnRemove, { backgroundColor: colors.destructive + '15', borderColor: colors.destructive + '33' }]}>
+              <Text style={[s.btnRemoveText, { color: colors.destructive }]}>remove</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -515,16 +508,16 @@ export default function WardrobeScreen() {
           activeOpacity={1} 
           onPress={() => setShowImportModal(false)}
         />
-        <View style={s.importModal}>
-          <Text style={s.importModalTitle}>Import from link</Text>
-          <Text style={s.importModalSub}>Paste a link from Zara, H&M, Myntra, etc. to digitally try on this garment.</Text>
+        <View style={[s.importModal, { backgroundColor: colors.card }]}>
+          <Text style={[s.importModalTitle, { color: colors.text }]}>Import from link</Text>
+          <Text style={[s.importModalSub, { color: colors.mutedForeground }]}>Paste a link from Zara, H&M, Myntra, etc. to digitally try on this garment.</Text>
           
-          <View style={s.inputWrapper}>
-            <Feather name="link" size={16} color={C.brass} style={{ marginRight: 8 }} />
+          <View style={[s.inputWrapper, { backgroundColor: colors.background, borderColor: colors.primary + '44' }]}>
+            <Feather name="link" size={16} color={colors.primary} style={{ marginRight: 8 }} />
             <TextInput
-              style={s.linkInput}
+              style={[s.linkInput, { color: colors.text }]}
               placeholder="https://"
-              placeholderTextColor={C.muted666}
+              placeholderTextColor={colors.mutedForeground}
               value={importLink}
               onChangeText={setImportLink}
               autoCapitalize="none"
@@ -532,13 +525,13 @@ export default function WardrobeScreen() {
               keyboardType="url"
             />
           </View>
-
+ 
           <TouchableOpacity 
-            style={[s.importSubmitBtn, !importLink && { opacity: 0.5 }]}
+            style={[s.importSubmitBtn, { backgroundColor: colors.primary }, !importLink && { opacity: 0.5 }]}
             onPress={handleImportSubmit}
             disabled={!importLink}
           >
-            <Text style={s.importSubmitText}>Import & Try On</Text>
+            <Text style={[s.importSubmitText, { color: colors.primaryForeground }]}>Import & Try On</Text>
           </TouchableOpacity>
         </View>
       </Modal>
@@ -549,75 +542,75 @@ export default function WardrobeScreen() {
 
 // ─── Styles ──────────────────────────────────────────────────────────────────
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: C.bg },
+  root: { flex: 1, backgroundColor: '#111111' },
 
   // Header bar
-  headerBar:    { height: 36, backgroundColor: C.headerBg, borderBottomWidth: 2, borderBottomColor: '#2A1E0A', flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14 },
-  headerTitle:  { fontFamily: 'Inter_400Regular', fontSize: 9, color: C.brass, letterSpacing: 1.5, flex: 1 },
+  headerBar:    { height: 36, backgroundColor: '#1A1208', borderBottomWidth: 2, borderBottomColor: '#2A1E0A', flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14 },
+  headerTitle:  { fontFamily: 'Inter_400Regular', fontSize: 9, color: '#C9A84C', letterSpacing: 1.5, flex: 1 },
   headerIcons:  { flexDirection: 'row', gap: 6 },
   iconBtn:      { width: 24, height: 24, borderRadius: 12, backgroundColor: '#1F1208', borderWidth: 0.5, borderColor: 'rgba(201,168,76,0.2)', alignItems: 'center', justifyContent: 'center' },
 
   // Health strip
-  healthStrip:  { backgroundColor: C.healthBg, borderBottomWidth: 1, borderBottomColor: C.healthBorder, paddingHorizontal: 16, paddingVertical: 14, flexDirection: 'row', alignItems: 'center', gap: 8 },
-  healthLabel:  { fontFamily: 'Inter_500Medium', fontSize: 13, color: C.green },
-  trackOuter:   { flex: 1, height: 5, backgroundColor: C.trackBg, borderRadius: 3, overflow: 'hidden' },
-  trackFill:    { height: '100%', backgroundColor: C.brass, borderRadius: 3 },
-  healthPct:    { fontFamily: 'Inter_500Medium', fontSize: 13, color: C.brass },
+  healthStrip:  { borderBottomWidth: 1, paddingHorizontal: 16, paddingVertical: 14, flexDirection: 'row', alignItems: 'center', gap: 8 },
+  healthLabel:  { fontFamily: 'Inter_500Medium', fontSize: 13 },
+  trackOuter:   { flex: 1, height: 5, borderRadius: 3, overflow: 'hidden' },
+  trackFill:    { height: '100%', borderRadius: 3 },
+  healthPct:    { fontFamily: 'Inter_500Medium', fontSize: 13 },
 
   // Filter pills
-  filterBar:    { height: 52, borderBottomWidth: 1, borderBottomColor: '#1A1408', backgroundColor: C.bg },
+  filterBar:    { height: 52, borderBottomWidth: 1 },
   filterScroll: { paddingHorizontal: 16, gap: 8, flexDirection: 'row', alignItems: 'center', height: 52 },
   pill:         { borderRadius: 20, paddingHorizontal: 14, paddingVertical: 7 },
-  pillActive:   { backgroundColor: C.brass },
-  pillInactive: { backgroundColor: '#181208', borderWidth: 0.5, borderColor: '#2A1E0A' },
+  pillActive:   { },
+  pillInactive: { borderWidth: 0.5 },
   pillText:     { fontFamily: 'Inter_500Medium', fontSize: 11 },
   pillTextActive:   { color: '#0A0A0A' },
-  pillTextInactive: { color: C.muted666 },
+  pillTextInactive: { },
 
   // Scroll
   scroll: { paddingHorizontal: 12, paddingBottom: 120, gap: 0 },
 
   // Accessories
-  accessCard:         { backgroundColor: C.surfaceRack, borderRadius: 14, borderWidth: 0.5, borderColor: C.cardBorder, padding: 14 },
+  accessCard:         { backgroundColor: '#0D0A06', borderRadius: 14, borderWidth: 0.5, borderColor: '#222222', padding: 14 },
   accessGrid:         { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  accessCell:         { width: '22%', flex: 1, aspectRatio: 1, backgroundColor: C.card, borderRadius: 10, borderWidth: 0.5, borderColor: '#1E1608', alignItems: 'center', justifyContent: 'center', gap: 3 },
+  accessCell:         { width: '22%', flex: 1, aspectRatio: 1, backgroundColor: '#161616', borderRadius: 10, borderWidth: 0.5, borderColor: '#1E1608', alignItems: 'center', justifyContent: 'center', gap: 3 },
   accessCellFeatured: { backgroundColor: '#1A1208', borderColor: 'rgba(201,168,76,0.27)' },
-  accessLabel:        { fontFamily: 'Inter_400Regular', fontSize: 7, color: C.muted555, textAlign: 'center' },
-  accessLabelFeatured:{ color: C.brass },
+  accessLabel:        { fontFamily: 'Inter_400Regular', fontSize: 7, color: '#999999', textAlign: 'center' },
+  accessLabelFeatured:{ color: '#C9A84C' },
 
   // Outfits
-  outfitCard:   { backgroundColor: C.card, borderRadius: 14, borderWidth: 0.5, borderColor: C.cardBorder, padding: 10 },
+  outfitCard:   { backgroundColor: '#161616', borderRadius: 14, borderWidth: 0.5, borderColor: '#222222', padding: 10 },
   outfitScroll: { gap: 8 },
 
   // Item Detail
-  detailCard:   { backgroundColor: C.card, borderRadius: 16, borderWidth: 0.5, borderColor: C.cardBorder, padding: 16, marginTop: 10 },
-  dragHandle:   { width: 36, height: 3, backgroundColor: C.cardBorder, borderRadius: 2, alignSelf: 'center', marginBottom: 16 },
+  detailCard:   { borderRadius: 16, borderWidth: 0.5, padding: 16, marginTop: 10 },
+  dragHandle:   { width: 36, height: 3, borderRadius: 2, alignSelf: 'center', marginBottom: 16 },
   detailHeader: { flexDirection: 'row', gap: 14, marginBottom: 16 },
-  detailThumb:  { width: 56, height: 64, backgroundColor: '#1A1208', borderRadius: 10, borderWidth: 0.5, borderColor: C.cardBorder, alignItems: 'center', justifyContent: 'center' },
+  detailThumb:  { width: 56, height: 64, borderRadius: 10, borderWidth: 0.5, alignItems: 'center', justifyContent: 'center' },
   detailInfo:   { flex: 1, gap: 4 },
   detailName:   { fontFamily: 'PlayfairDisplay_700Bold', fontSize: 14, color: '#F0ECE4' },
   tagsRow:      { flexDirection: 'row', flexWrap: 'wrap', gap: 4 },
   tagGold:      { backgroundColor: '#1F1A0D', borderWidth: 0.5, borderColor: 'rgba(201,168,76,0.27)', borderRadius: 10, paddingHorizontal: 6, paddingVertical: 2 },
-  tagGoldText:  { fontFamily: 'Inter_400Regular', fontSize: 8, color: C.brass },
-  tag:          { backgroundColor: '#1E1608', borderWidth: 0.5, borderColor: C.cardBorder, borderRadius: 10, paddingHorizontal: 6, paddingVertical: 2 },
-  tagText:      { fontFamily: 'Inter_400Regular', fontSize: 8, color: C.muted888 },
-  wearsLabel:   { fontFamily: 'Inter_400Regular', fontSize: 9, color: C.muted555, marginTop: 2 },
+  tagGoldText:  { fontFamily: 'Inter_400Regular', fontSize: 8, color: '#C9A84C' },
+  tag:          { backgroundColor: '#1E1608', borderWidth: 0.5, borderColor: '#222222', borderRadius: 10, paddingHorizontal: 6, paddingVertical: 2 },
+  tagText:      { fontFamily: 'Inter_400Regular', fontSize: 8, color: '#BBBBBB' },
+  wearsLabel:   { fontFamily: 'Inter_400Regular', fontSize: 9, color: '#999999', marginTop: 2 },
   dotsRow:      { flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 2 },
   dot:          { width: 7, height: 7, borderRadius: 3.5 },
   actionRow:    { flexDirection: 'row', gap: 6 },
-  btnTryOn:     { flex: 1, backgroundColor: C.brass, borderRadius: 9, paddingVertical: 8, alignItems: 'center' },
+  btnTryOn:     { flex: 1, borderRadius: 9, paddingVertical: 8, alignItems: 'center' },
   btnTryOnText: { fontFamily: 'Inter_500Medium', fontSize: 10, color: '#0A0A0A' },
-  btnPair:      { flex: 1, borderWidth: 0.5, borderColor: 'rgba(201,168,76,0.33)', borderRadius: 9, paddingVertical: 8, alignItems: 'center' },
-  btnPairText:  { fontFamily: 'Inter_500Medium', fontSize: 10, color: C.brass },
-  btnRemove:    { flex: 1, backgroundColor: '#2A1414', borderWidth: 0.5, borderColor: '#5A2A2A', borderRadius: 9, paddingVertical: 8, alignItems: 'center' },
-  btnRemoveText:{ fontFamily: 'Inter_500Medium', fontSize: 10, color: C.warnText },
+  btnPair:      { flex: 1, borderWidth: 0.5, borderRadius: 9, paddingVertical: 8, alignItems: 'center' },
+  btnPairText:  { fontFamily: 'Inter_500Medium', fontSize: 10 },
+  btnRemove:    { flex: 1, borderWidth: 0.5, borderRadius: 9, paddingVertical: 8, alignItems: 'center' },
+  btnRemoveText:{ fontFamily: 'Inter_500Medium', fontSize: 10 },
 
   // Add strip
   addStrip:           { flexDirection: 'row', gap: 8, marginTop: 12 },
-  addCardPrimary:     { flex: 1, backgroundColor: C.brass, borderRadius: 12, paddingVertical: 10, paddingHorizontal: 6, alignItems: 'center', gap: 4 },
-  addCardPrimaryText: { fontFamily: 'Inter_500Medium', fontSize: 9, color: '#0A0A0A' },
-  addCardSecondary:   { flex: 1, backgroundColor: C.card, borderWidth: 0.5, borderColor: C.cardBorder, borderRadius: 12, paddingVertical: 10, paddingHorizontal: 6, alignItems: 'center', gap: 4 },
-  addCardSecondaryText:{ fontFamily: 'Inter_400Regular', fontSize: 9, color: C.muted666 },
+  addCardPrimary:     { flex: 1, borderRadius: 12, paddingVertical: 10, paddingHorizontal: 6, alignItems: 'center', gap: 4 },
+  addCardPrimaryText: { fontFamily: 'Inter_500Medium', fontSize: 9 },
+  addCardSecondary:   { flex: 1, borderWidth: 0.5, borderRadius: 12, paddingVertical: 10, paddingHorizontal: 6, alignItems: 'center', gap: 4 },
+  addCardSecondaryText:{ fontFamily: 'Inter_400Regular', fontSize: 9 },
   
   // Modals
   modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)' },
@@ -626,20 +619,17 @@ const s = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: '#111111',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     padding: 24,
     paddingBottom: Platform.OS === 'web' ? 24 : 44,
   },
-  importModalTitle: { fontFamily: 'PlayfairDisplay_700Bold', fontSize: 20, color: '#F0ECE4', marginBottom: 6 },
-  importModalSub: { fontFamily: 'Inter_400Regular', fontSize: 11, color: C.muted888, marginBottom: 20, lineHeight: 16 },
+  importModalTitle: { fontFamily: 'PlayfairDisplay_700Bold', fontSize: 20, marginBottom: 6 },
+  importModalSub: { fontFamily: 'Inter_400Regular', fontSize: 11, marginBottom: 20, lineHeight: 16 },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#000000',
     borderWidth: 1,
-    borderColor: 'rgba(201,168,76,0.3)',
     borderRadius: 12,
     paddingHorizontal: 14,
     height: 48,
@@ -649,10 +639,8 @@ const s = StyleSheet.create({
     flex: 1,
     fontFamily: 'Inter_400Regular',
     fontSize: 14,
-    color: '#E0D8CC',
   },
   importSubmitBtn: {
-    backgroundColor: C.brass,
     borderRadius: 12,
     height: 48,
     alignItems: 'center',
@@ -661,7 +649,6 @@ const s = StyleSheet.create({
   importSubmitText: {
     fontFamily: 'Inter_500Medium',
     fontSize: 13,
-    color: '#000000',
     letterSpacing: 0.5,
   },
 });
