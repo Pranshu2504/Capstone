@@ -19,15 +19,19 @@ import MirrorScreen from '@/screens/tabs/MirrorScreen';
 import WardrobeScreen from '@/screens/tabs/WardrobeScreen';
 import LensScreen from '@/screens/tabs/LensScreen';
 import CalendarScreen from '@/screens/tabs/CalendarScreen';
-import PulseScreen from '@/screens/tabs/PulseScreen';
+
 import IdentityScreen from '@/screens/tabs/IdentityScreen';
 import ChatbotScreen from '@/screens/ChatbotScreen';
+import FriendsScreen from '@/screens/FriendsScreen';
+import ForYouScreen from '@/screens/ForYouScreen';
 export type RootStackParamList = {
   Door: undefined;
   Interview: undefined;
   Main: undefined;
   Identity: undefined;
   Chatbot: undefined;
+  Friends: undefined;
+  ForYou: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -122,11 +126,11 @@ function TabNavigator() {
         }}
       />
       <Tab.Screen
-        name="pulse"
-        component={PulseScreen}
+        name="profile"
+        component={IdentityScreen}
         options={{
-          title: 'Pulse',
-          tabBarIcon: ({ color }) => <Feather name="activity" size={24} color={color} />,
+          title: 'Profile',
+          tabBarIcon: ({ color }) => <Feather name="user" size={24} color={color} />,
         }}
       />
     </Tab.Navigator>
@@ -186,6 +190,8 @@ function AppContent() {
                   <Stack.Screen name="Main" component={TabNavigator} />
                   <Stack.Screen name="Identity" component={IdentityScreen} options={{ presentation: 'modal' }} />
                   <Stack.Screen name="Chatbot" component={ChatbotScreen} options={{ presentation: 'formSheet' }} />
+                  <Stack.Screen name="Friends" component={FriendsScreen} />
+                  <Stack.Screen name="ForYou" component={ForYouScreen} />
                 </Stack.Navigator>
               </NavigationContainer>
             </KeyboardProvider>
