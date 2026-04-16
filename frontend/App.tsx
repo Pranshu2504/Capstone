@@ -24,6 +24,8 @@ import IdentityScreen from '@/screens/tabs/IdentityScreen';
 import ChatbotScreen from '@/screens/ChatbotScreen';
 import FriendsScreen from '@/screens/FriendsScreen';
 import ForYouScreen from '@/screens/ForYouScreen';
+import ClothingCategoryScreen, { ClothingItem } from '@/screens/ClothingCategoryScreen';
+
 export type RootStackParamList = {
   Door: undefined;
   Interview: undefined;
@@ -32,6 +34,12 @@ export type RootStackParamList = {
   Chatbot: undefined;
   Friends: undefined;
   ForYou: undefined;
+  ClothingCategory: {
+    title: string;
+    item: ClothingItem;
+    count: number;
+    displayType: 'hanger' | 'folded';
+  };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -192,6 +200,7 @@ function AppContent() {
                   <Stack.Screen name="Chatbot" component={ChatbotScreen} options={{ presentation: 'formSheet' }} />
                   <Stack.Screen name="Friends" component={FriendsScreen} />
                   <Stack.Screen name="ForYou" component={ForYouScreen} />
+                  <Stack.Screen name="ClothingCategory" component={ClothingCategoryScreen} />
                 </Stack.Navigator>
               </NavigationContainer>
             </KeyboardProvider>

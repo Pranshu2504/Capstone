@@ -92,7 +92,7 @@ frontend/dist/
 frontend/logs/
 frontend/*.log
 
-
+c:\Users\Admin\AppData\Local\Packages\5319275A.WhatsAppDesktop_cv1g1gvanyjgm\LocalState\sessions\EC08C7F62240C91B948E2843400E6D9A0CEBB1A7\transfers\2026-16\WhatsApp Image 2026-04-16 at 15.45.02.jpeg
 # ───────────────────────────────────────────────
 # PYTHON (AI / Backend)
 # ───────────────────────────────────────────────
@@ -133,7 +133,7 @@ Pipfile.lock
 # ML / AI artifacts
 *.pkl
 *.pickle
-*.h5
+*.h5c:\Users\Admin\AppData\Local\Packages\5319275A.WhatsAppDesktop_cv1g1gvanyjgm\LocalState\sessions\EC08C7F62240C91B948E2843400E6D9A0CEBB1A7\transfers\2026-16\WhatsApp Image 2026-04-16 at 15.45.02.jpeg
 *.hdf5
 *.pt
 *.pth
