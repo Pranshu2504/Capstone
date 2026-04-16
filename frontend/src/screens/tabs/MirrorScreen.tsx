@@ -202,7 +202,6 @@ export default function MirrorScreen() {
                   styles.feedCard,
                   { backgroundColor: post.bgColor },
                   { height: post.tall ? 200 : 160 },
-                  activeVibe && post.aesthetic !== activeVibe && { opacity: 0.2 },
                 ]}
               >
                 <View style={styles.cardImageArea}>

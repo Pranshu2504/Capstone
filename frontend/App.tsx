@@ -19,7 +19,7 @@ import MirrorScreen from '@/screens/tabs/MirrorScreen';
 import WardrobeScreen from '@/screens/tabs/WardrobeScreen';
 import LensScreen from '@/screens/tabs/LensScreen';
 import CalendarScreen from '@/screens/tabs/CalendarScreen';
-import PulseScreen from '@/screens/tabs/PulseScreen';
+
 import IdentityScreen from '@/screens/tabs/IdentityScreen';
 import ChatbotScreen from '@/screens/ChatbotScreen';
 import FriendsScreen from '@/screens/FriendsScreen';
@@ -126,11 +126,11 @@ function TabNavigator() {
         }}
       />
       <Tab.Screen
-        name="pulse"
-        component={PulseScreen}
+        name="profile"
+        component={IdentityScreen}
         options={{
-          title: 'Pulse',
-          tabBarIcon: ({ color }) => <Feather name="activity" size={24} color={color} />,
+          title: 'Profile',
+          tabBarIcon: ({ color }) => <Feather name="user" size={24} color={color} />,
         }}
       />
     </Tab.Navigator>
