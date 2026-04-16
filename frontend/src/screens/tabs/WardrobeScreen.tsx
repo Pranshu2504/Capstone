@@ -38,10 +38,10 @@ const TOPS = [
 ];
 
 const DRESSES = [
-  { id: 'd1', name: 'mauve midi',    bg: '#1E1428', stroke: '#3A2A5A', wears: 4, cat: 'casual' },
-  { id: 'd2', name: 'maroon kurta',  bg: '#1A0E0E', stroke: '#4A1A1A', wears: 2, cat: 'indian' },
-  { id: 'd3', name: 'gold anarkali', bg: '#1E1E14', stroke: '#3A3A2A', wears: 0, cat: 'indian' },
-  { id: 'd4', name: 'teal sundress', bg: '#141E1E', stroke: '#2A4A4A', wears: 3, cat: 'casual' },
+  { id: 'd1', name: 'mauve midi',    bg: '#1E1428', stroke: '#3A2A5A', wears: 4, cat: 'casual', isDress: true },
+  { id: 'd2', name: 'maroon kurta',  bg: '#1A0E0E', stroke: '#4A1A1A', wears: 2, cat: 'indian', isDress: true },
+  { id: 'd3', name: 'gold anarkali', bg: '#1E1E14', stroke: '#3A3A2A', wears: 0, cat: 'indian', isDress: true },
+  { id: 'd4', name: 'teal sundress', bg: '#141E1E', stroke: '#2A4A4A', wears: 3, cat: 'casual', isDress: true },
 ];
 
 const BOTTOMS = [
@@ -68,22 +68,16 @@ const OUTFITS = [
   },
 ];
 
-const WEAR_DOTS = [
-  '#4A7A5A','#4A6A9A','#C9A84C','#4A7A5A',
-  '#9A5A7A','#4A6A9A','#4A7A5A','#C9A84C',
-  '#4A6A9A','#4A7A5A','#9A5A7A','#C9A84C',
-];
-
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-function SectionHeader({ title, count }: { title: string; count: number }) {
+function SectionHeader({ title, count, onSeeAll }: { title: string; count: number; onSeeAll?: () => void }) {
   const colors = useColors();
   return (
     <View style={sh.row}>
       <View style={[sh.accent, { backgroundColor: colors.primary }]} />
       <Text style={[sh.title, { color: colors.text }]}>{title.toUpperCase()}</Text>
       <Text style={[sh.count, { color: colors.mutedForeground }]}>{count} items</Text>
-      <TouchableOpacity>
+      <TouchableOpacity onPress={onSeeAll}>
         <Text style={[sh.seeAll, { color: colors.primary }]}>see all</Text>
       </TouchableOpacity>
     </View>
@@ -118,8 +112,8 @@ function RailCard({ children, showRod = true }: { children: React.ReactNode; sho
   );
 }
 const rc = StyleSheet.create({
-  card:       { backgroundColor: '#111111', borderRadius: 14, borderWidth: 0.5, borderColor: '#2A1E0A', padding: 14 },
-  rodWrapper: { height: 6, marginBottom: 10 },
+  card:       { backgroundColor: '#111111', borderRadius: 14, borderWidth: 0.5, borderColor: '#2A1E0A', paddingHorizontal: 12, paddingTop: 10, paddingBottom: 12 },
+  rodWrapper: { height: 6, marginBottom: 8 },
   rodBar:     { position: 'absolute', left: 0, right: 0, top: 3, height: 3, backgroundColor: '#3A2A10', borderRadius: 2 },
   bracketL:   { position: 'absolute', left: 10, top: 0, width: 6, height: 6, borderRadius: 3, backgroundColor: 'rgba(201,168,76,0.27)', borderWidth: 1, borderColor: 'rgba(201,168,76,0.4)' },
   bracketR:   { position: 'absolute', right: 10, top: 0, width: 6, height: 6, borderRadius: 3, backgroundColor: 'rgba(201,168,76,0.27)', borderWidth: 1, borderColor: 'rgba(201,168,76,0.4)' },
@@ -127,15 +121,15 @@ const rc = StyleSheet.create({
 });
 
 function HangerItem({
-  name, bg, stroke, wears, cat, isDress,
-}: { name: string; bg: string; stroke: string; wears: number; cat: string; isDress?: boolean }) {
+  name, bg, stroke, wears, cat, isDress, onPress,
+}: { name: string; bg: string; stroke: string; wears: number; cat: string; isDress?: boolean; onPress?: () => void }) {
   const colors = useColors();
   const { theme } = useTheme();
   const woods = getWoodTone(theme as any);
   const lowWear = wears <= 1;
 
   return (
-    <View style={hng.wrapper}>
+    <TouchableOpacity style={hng.wrapper} onPress={onPress} activeOpacity={0.85}>
       <View style={[hng.hook, { backgroundColor: woods.bracketBorder }]} />
       <View style={[hng.bar, { backgroundColor: woods.rod }]} />
       <View style={[hng.card, { backgroundColor: bg }, lowWear && { borderColor: colors.destructive }]}>
@@ -146,19 +140,19 @@ function HangerItem({
       </View>
       <Text style={[hng.name, { color: colors.text }]} numberOfLines={1}>{name}</Text>
       <Text style={[hng.cat, { color: colors.mutedForeground }]}>{cat}</Text>
-    </View>
+    </TouchableOpacity>
   );
 }
 const hng = StyleSheet.create({
-  wrapper:       { width: 78, alignItems: 'center' },
+  wrapper:       { width: 82, alignItems: 'center' },
   hook:          { width: 2, height: 10, backgroundColor: 'rgba(201,168,76,0.33)' },
-  bar:           { width: 52, height: 2, backgroundColor: '#3A2A10', marginBottom: 6 },
-  card:          { width: 72, height: 84, borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 0.5, borderColor: 'transparent' },
+  bar:           { width: 56, height: 2, backgroundColor: '#3A2A10', marginBottom: 5 },
+  card:          { width: 76, height: 92, borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 0.5, borderColor: 'transparent', overflow: 'hidden' },
   cardWarn:      { borderColor: '#3A1A1A' },
-  badge:         { position: 'absolute', top: 4, right: 4, backgroundColor: 'rgba(10,10,10,0.6)', borderRadius: 5, paddingHorizontal: 4, paddingVertical: 1 },
+  badge:         { position: 'absolute', top: 5, right: 5, backgroundColor: 'rgba(10,10,10,0.6)', borderRadius: 5, paddingHorizontal: 4, paddingVertical: 1 },
   badgeText:     { fontSize: 7, fontFamily: 'Inter_400Regular' },
-  name:          { fontFamily: 'Inter_400Regular', fontSize: 8, color: '#BBBBBB', marginTop: 6, maxWidth: 76, textAlign: 'center' },
-  cat:           { fontFamily: 'Inter_400Regular', fontSize: 7, color: '#BBBBBB', marginTop: 2 },
+  name:          { fontFamily: 'Inter_400Regular', fontSize: 8, color: '#BBBBBB', marginTop: 5, maxWidth: 80, textAlign: 'center' },
+  cat:           { fontFamily: 'Inter_400Regular', fontSize: 7, color: '#BBBBBB', marginTop: 1 },
 });
 
 function ShelfCard({ children }: { children: React.ReactNode }) {
@@ -176,29 +170,40 @@ function ShelfCard({ children }: { children: React.ReactNode }) {
   );
 }
 const sc = StyleSheet.create({
-  card:  { backgroundColor: '#0F0C07', borderRadius: 14, borderWidth: 0.5, borderColor: '#2A1E0A', padding: 14 },
-  shelf: { height: 3, backgroundColor: '#2A1E0A', marginBottom: 12, borderRadius: 1.5 },
+  card:  { backgroundColor: '#0F0C07', borderRadius: 14, borderWidth: 0.5, borderColor: '#2A1E0A', paddingHorizontal: 12, paddingTop: 10, paddingBottom: 12 },
+  shelf: { height: 3, backgroundColor: '#2A1E0A', marginBottom: 10, borderRadius: 1.5 },
   scroll:{ gap: 8, alignItems: 'flex-start' },
 });
 
-function FoldedItem({ name, bg, wears }: { name: string; bg: string; wears: number }) {
+function FoldedItem({ name, bg, wears, onPress }: { name: string; bg: string; wears: number; onPress?: () => void }) {
   const colors = useColors();
   const lowWear = wears === 0;
   return (
-    <View style={fi.wrapper}>
+    <TouchableOpacity style={fi.wrapper} onPress={onPress} activeOpacity={0.85}>
       <View style={[fi.fold, { backgroundColor: bg }]}>
-        <Feather name="minus" size={18} color={lowWear ? colors.destructive : colors.mutedForeground} />
-        <Text style={[fi.wears, { color: colors.mutedForeground }, lowWear && { color: colors.destructive }]}>{wears}×</Text>
+        {/* Fold lines — evenly spaced horizontal bands suggest stacked fabric */}
+        <View style={fi.linesArea}>
+          <View style={[fi.line, { opacity: 0.35 }]} />
+          <View style={[fi.line, { opacity: 0.22 }]} />
+          <View style={[fi.line, { opacity: 0.13 }]} />
+        </View>
+        {/* Count badge */}
+        <View style={[fi.badge, lowWear && { backgroundColor: '#2A1010' }]}>
+          <Text style={[fi.badgeText, { color: colors.primary }, lowWear && { color: colors.destructive }]}>{wears}×</Text>
+        </View>
       </View>
       <Text style={[fi.name, { color: colors.text }, lowWear && { color: colors.destructive }]} numberOfLines={1}>{name}</Text>
-    </View>
+    </TouchableOpacity>
   );
 }
 const fi = StyleSheet.create({
-  wrapper:   { width: 80, alignItems: 'center' },
-  fold:      { width: 80, height: 62, borderRadius: 10, alignItems: 'center', justifyContent: 'center', gap: 6 },
-  wears:     { fontFamily: 'Inter_400Regular', fontSize: 8, color: '#999999' },
-  name:      { fontFamily: 'Inter_400Regular', fontSize: 8, color: '#BBBBBB', marginTop: 6, maxWidth: 78, textAlign: 'center' },
+  wrapper:   { width: 82, alignItems: 'center' },
+  fold:      { width: 82, height: 74, borderRadius: 10, overflow: 'hidden', justifyContent: 'center' },
+  linesArea: { paddingHorizontal: 10, gap: 7 },
+  line:      { height: 2, backgroundColor: 'rgba(255,255,255,0.9)', borderRadius: 1 },
+  badge:     { position: 'absolute', bottom: 6, right: 7, backgroundColor: 'rgba(10,10,10,0.55)', borderRadius: 5, paddingHorizontal: 5, paddingVertical: 1 },
+  badgeText: { fontSize: 8, fontFamily: 'Inter_400Regular' },
+  name:      { fontFamily: 'Inter_400Regular', fontSize: 8, color: '#BBBBBB', marginTop: 6, maxWidth: 80, textAlign: 'center' },
 });
 
 function RackCard({ children }: { children: React.ReactNode }) {
@@ -426,7 +431,16 @@ export default function WardrobeScreen() {
         <SectionHeader title="Tops" count={TOPS.length} />
         <RailCard>
           {TOPS.map((item) => (
-            <HangerItem key={item.id} {...item} />
+            <HangerItem
+              key={item.id}
+              {...item}
+              onPress={() => navigation.navigate('ClothingCategory', {
+                title: item.name,
+                item,
+                count: item.wears,
+                displayType: 'hanger',
+              })}
+            />
           ))}
         </RailCard>
 
@@ -434,7 +448,16 @@ export default function WardrobeScreen() {
         <SectionHeader title="Dresses & Ethnic" count={DRESSES.length} />
         <RailCard>
           {DRESSES.map((item) => (
-            <HangerItem key={item.id} {...item} isDress />
+            <HangerItem
+              key={item.id}
+              {...item}
+              onPress={() => navigation.navigate('ClothingCategory', {
+                title: item.name,
+                item,
+                count: item.wears,
+                displayType: 'hanger',
+              })}
+            />
           ))}
         </RailCard>
 
@@ -442,7 +465,16 @@ export default function WardrobeScreen() {
         <SectionHeader title="Bottoms" count={BOTTOMS.length} />
         <ShelfCard>
           {BOTTOMS.map((item) => (
-            <FoldedItem key={item.id} {...item} />
+            <FoldedItem
+              key={item.id}
+              {...item}
+              onPress={() => navigation.navigate('ClothingCategory', {
+                title: item.name,
+                item,
+                count: item.wears,
+                displayType: 'folded',
+              })}
+            />
           ))}
         </ShelfCard>
 
@@ -457,47 +489,6 @@ export default function WardrobeScreen() {
           </ScrollView>
         </View>
 
-        {/* Section 7: Item Detail Panel */}
-        <View style={[s.detailCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <View style={[s.dragHandle, { backgroundColor: colors.border }]} />
-          {/* Header */}
-          <View style={s.detailHeader}>
-            <View style={[s.detailThumb, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-              <Feather name="shopping-bag" size={22} color={colors.primary} />
-            </View>
-            <View style={s.detailInfo}>
-              <Text style={[s.detailName, { color: colors.text }]}>sage linen shirt</Text>
-              <View style={s.tagsRow}>
-                <View style={[s.tagGold, { backgroundColor: colors.brassSubtle, borderColor: colors.primary + '33' }]}>
-                  <Text style={[s.tagGoldText, { color: colors.primary }]}>tops</Text>
-                </View>
-                {['casual', 'linen', 'sage'].map((t) => (
-                  <View key={t} style={[s.tag, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                    <Text style={[s.tagText, { color: colors.mutedForeground }]}>{t}</Text>
-                  </View>
-                ))}
-              </View>
-              <Text style={[s.wearsLabel, { color: colors.mutedForeground }]}>12 wears by occasion:</Text>
-              <View style={s.dotsRow}>
-                {WEAR_DOTS.map((col, i) => (
-                  <View key={i} style={[s.dot, { backgroundColor: col }]} />
-                ))}
-              </View>
-            </View>
-          </View>
-          {/* Actions */}
-          <View style={s.actionRow}>
-            <TouchableOpacity style={[s.btnTryOn, { backgroundColor: colors.primary }]}>
-              <Text style={[s.btnTryOnText, { color: colors.primaryForeground }]}>try on</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={[s.btnPair, { borderColor: colors.primary + '55' }]}>
-              <Text style={[s.btnPairText, { color: colors.primary }]}>pair with</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={[s.btnRemove, { backgroundColor: colors.destructive + '15', borderColor: colors.destructive + '33' }]}>
-              <Text style={[s.btnRemoveText, { color: colors.destructive }]}>remove</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
 
       </ScrollView>
 
