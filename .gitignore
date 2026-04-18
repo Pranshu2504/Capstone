@@ -292,3 +292,6 @@ error.log
 # Developer Local Overrides
 frontend/android/build.gradle
 frontend/metro.config.js
+
+# Graphify local knowledge graph (stay local, never push)
+graphify-out/
