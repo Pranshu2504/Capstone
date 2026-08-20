@@ -196,6 +196,10 @@ backend/.nyc_output/
 dump.rdb
 *.rdb
 
+# Prisma migrations are source, not database dumps — the blanket *.sql rule
+# above was silently excluding them, so deploys applied no migrations at all.
+!backend/prisma/migrations/**/*.sql
+
 
 # ───────────────────────────────────────────────
 # DOCKER
