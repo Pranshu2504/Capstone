@@ -104,11 +104,10 @@ One manual step: set **`CORS_ORIGIN`** on the service to your Vercel production 
 (e.g. `https://zora.vercel.app`). Vercel *preview* origins (`*.vercel.app`) are
 already allowed in code.
 
-After the first deploy, seed the demo data from the Render shell:
-
-```bash
-npm run db:seed
-```
+**Seeding is automatic.** On boot the server checks for the demo user and seeds
+it if the database is empty — Render's free tier has no Shell, so `npm run db:seed`
+is not reachable there. It only runs against an empty database, so a restart never
+overwrites real data. Set `AUTO_SEED=false` to opt out.
 
 > On Render's free tier the service sleeps after inactivity, so the first request
 > after a while takes ~30s to wake. The frontend's fixture fallback means the UI

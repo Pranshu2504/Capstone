@@ -5,6 +5,7 @@ import morgan from 'morgan';
 import { env } from './lib/env.js';
 import { HttpError } from './lib/http.js';
 import { prisma } from './lib/prisma.js';
+import { seedDemoData } from './lib/seedData.js';
 import { calendarRouter } from './routes/calendar.js';
 import { discoverRouter } from './routes/discover.js';
 import { outfitsRouter } from './routes/outfits.js';
@@ -71,9 +72,36 @@ app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
   });
 });
 
+/**
+ * Seeds the demo data when the database has no demo user yet.
+ *
+ * Render's free tier provides no Shell, so `npm run db:seed` is not reachable
+ * on a fresh deploy. Seeding here keeps a new environment self-provisioning.
+ * It only ever runs against an empty database, so it cannot clobber real data.
+ * Set AUTO_SEED=false to opt out.
+ */
+async function ensureSeeded(): Promise<void> {
+  if (process.env.AUTO_SEED === 'false') return;
+
+  try {
+    const existing = await prisma.user.findUnique({
+      where: { handle: env.demoUserHandle },
+      select: { id: true },
+    });
+    if (existing) return;
+
+    console.log(`No demo user found — seeding ${env.demoUserHandle}...`);
+    await seedDemoData(prisma);
+  } catch (err) {
+    // Never block startup on seeding; /health stays honest either way.
+    console.error('[seed] Auto-seed failed:', err instanceof Error ? err.message : err);
+  }
+}
+
 const server = app.listen(env.port, () => {
   console.log(`ZORA API listening on http://localhost:${env.port}`);
   console.log(`  CORS origins: ${env.corsOrigins.join(', ')}`);
+  void ensureSeeded();
 });
 
 for (const signal of ['SIGINT', 'SIGTERM'] as const) {
