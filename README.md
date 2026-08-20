@@ -3,6 +3,16 @@
 An AI wardrobe stylist. One React Native codebase ships to **Android** and to the
 **web**; a TypeScript/Express API backs both.
 
+| | |
+| --- | --- |
+| **Live app** | https://capstone-blush-iota.vercel.app |
+| **API** | https://zora-api-wn30.onrender.com |
+| API health | https://zora-api-wn30.onrender.com/health |
+
+> The API runs on Render's free tier and sleeps after inactivity, so the first
+> request in a while takes ~30s. The app stays usable meanwhile — the hooks fall
+> back to bundled fixtures until the API answers.
+
 ```
 Capstone/
 ├── frontend/     React Native app (Android) + Vite web target — deploys to Vercel
