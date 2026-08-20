@@ -183,6 +183,11 @@ backend/.cache/
 backend/coverage/
 backend/.nyc_output/
 
+# Runtime storage for the try-on service: user uploads and generated outputs.
+# Not prefixed with a folder name, so it keeps working if the service moves.
+**/storage/uploads/
+**/storage/outputs/
+
 
 # ───────────────────────────────────────────────
 # DATABASES
