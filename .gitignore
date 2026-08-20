@@ -43,9 +43,11 @@ pnpm-debug.log*
 .yarn/unplugged
 .yarn/build-state.yml
 .yarn/install-state.gz
-package-lock.json
-yarn.lock
-pnpm-lock.yaml
+# Lockfiles are committed: Render's `npm ci` requires one, and Vercel needs it
+# for reproducible builds. Ignoring them made deploys non-deterministic.
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
 # ───────────────────────────────────────────────
 # REACT NATIVE
 # ───────────────────────────────────────────────
@@ -292,3 +294,8 @@ error.log
 # Developer Local Overrides
 frontend/android/build.gradle
 frontend/metro.config.js
+
+# ZORA web + backend
+frontend/.env
+backend/.env
+backend/node_modules/

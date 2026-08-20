@@ -33,6 +33,22 @@ export default function DoorScreen() {
   const loginAnim = useRef(new Animated.Value(0)).current;
   const swipeAnim = useRef(new Animated.Value(0)).current;
 
+  const openDoor = useRef(() => {
+    ReactNativeHapticFeedback.trigger("impactHeavy");
+    Animated.timing(swipeAnim, {
+      toValue: width,
+      duration: 400,
+      useNativeDriver: true,
+    }).start(() => {
+      setDoorOpen(true);
+      Animated.timing(loginAnim, {
+        toValue: 1,
+        duration: 500,
+        useNativeDriver: true,
+      }).start(() => setShowLogin(true));
+    });
+  }).current;
+
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
@@ -44,20 +60,14 @@ export default function DoorScreen() {
       },
       onPanResponderRelease: (_, gestureState) => {
         if (gestureState.dx > 80) {
-          ReactNativeHapticFeedback.trigger("impactHeavy");
-          Animated.timing(swipeAnim, {
-            toValue: width,
-            duration: 400,
-            useNativeDriver: true,
-          }).start(() => {
-            setDoorOpen(true);
-            Animated.timing(loginAnim, {
-              toValue: 1,
-              duration: 500,
-              useNativeDriver: true,
-            }).start(() => setShowLogin(true));
-          });
+          openDoor();
         } else {
+          // A tap (no meaningful travel) counts as "open" with a mouse, where
+          // dragging is an unnatural affordance.
+          if (Platform.OS === "web" && Math.abs(gestureState.dx) < 5) {
+            openDoor();
+            return;
+          }
           Animated.spring(swipeAnim, {
             toValue: 0,
             useNativeDriver: true,
@@ -182,7 +192,7 @@ export default function DoorScreen() {
         </Animated.View>
 
         <Text style={[styles.dragHint, { color: colors.mutedForeground }]}>
-          drag to enter
+          {Platform.OS === "web" ? "click or drag to enter" : "drag to enter"}
         </Text>
       </View>
     </View>

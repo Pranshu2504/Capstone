@@ -14,7 +14,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import Feather from "react-native-vector-icons/Feather";
 import { useColors } from "@/hooks/useColors";
-import { MOCK_WARDROBE_ITEMS } from "@/constants/mockData";
+import { useWardrobe } from "@/api/hooks";
 import ReactNativeHapticFeedback from "react-native-haptic-feedback";
 
 const { width, height } = Dimensions.get("window");
@@ -23,6 +23,7 @@ type Mode = "mirror" | "link";
 
 export default function LensScreen() {
   const colors = useColors();
+  const { data: wardrobeItems } = useWardrobe();
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
   const [mode, setMode] = useState<Mode>("mirror");
@@ -168,7 +169,7 @@ export default function LensScreen() {
                   >
                     <View style={styles.filmCardSwatches}>
                       {outfit.items.slice(0, 3).map((itemId) => {
-                        const item = MOCK_WARDROBE_ITEMS.find((i) => i.id === itemId);
+                        const item = wardrobeItems.find((i) => i.id === itemId);
                         return item ? (
                           <View
                             key={itemId}
