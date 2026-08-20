@@ -14,13 +14,15 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import Feather from "react-native-vector-icons/Feather";
 import { useColors } from "@/hooks/useColors";
-import { INTERVIEW_QUESTIONS, MOCK_USER } from "@/constants/mockData";
+import { INTERVIEW_QUESTIONS } from "@/constants/mockData";
+import { useUser } from "@/api/hooks";
 import ReactNativeHapticFeedback from "react-native-haptic-feedback";
 
 const { width } = Dimensions.get("window");
 
 export default function InterviewScreen() {
   const colors = useColors();
+  const { data: user } = useUser();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
 
@@ -71,13 +73,13 @@ export default function InterviewScreen() {
           <Text style={[styles.endSub, { color: colors.warmWhite }]}>is ready</Text>
 
           <View style={styles.paletteRow}>
-            {MOCK_USER.palette.map((c, i) => (
+            {user.palette.map((c, i) => (
               <View key={i} style={[styles.paletteDot, { backgroundColor: c }]} />
             ))}
           </View>
 
           <View style={styles.keywordsRow}>
-            {MOCK_USER.moodKeywords.map((k) => (
+            {user.moodKeywords.map((k) => (
               <View key={k} style={[styles.keywordChip, { borderColor: colors.brass }]}>
                 <Text style={[styles.keywordText, { color: colors.brass }]}>{k}</Text>
               </View>

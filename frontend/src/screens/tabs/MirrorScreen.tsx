@@ -15,7 +15,7 @@ import { useNavigation } from "@react-navigation/native";
 import Feather from "react-native-vector-icons/Feather";
 import ReactNativeHapticFeedback from "react-native-haptic-feedback";
 import { useColors } from "@/hooks/useColors";
-import { MOCK_OUTFIT_TODAY } from "@/constants/mockData";
+import { useOutfitToday } from "@/api/hooks";
 
 const { width } = Dimensions.get("window");
 
@@ -32,6 +32,7 @@ const FEED_POSTS = [
 
 export default function MirrorScreen() {
   const colors = useColors();
+  const { data: outfitToday } = useOutfitToday();
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
 
@@ -127,10 +128,10 @@ export default function MirrorScreen() {
             <View style={styles.heroGradient} />
             <View style={styles.heroContent}>
               <Text style={[styles.heroHeadline, { color: colors.warmWhite }]}>
-                {MOCK_OUTFIT_TODAY.headline}
+                {outfitToday.headline}
               </Text>
               <Text style={[styles.heroSubhead, { color: colors.mutedForeground }]}>
-                {MOCK_OUTFIT_TODAY.subhead}
+                {outfitToday.subhead}
               </Text>
               <View style={styles.heroCTARow}>
                 <TouchableOpacity

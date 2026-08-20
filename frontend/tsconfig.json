@@ -16,5 +16,15 @@
     }
   },
   "include": ["**/*.ts", "**/*.tsx"],
-  "exclude": ["node_modules", "android"]
+  "exclude": [
+    "node_modules",
+    "android",
+    "dist",
+    "vite.config.ts",
+    "vite-plugins",
+    "index.web.tsx",
+    "src/types/web-env.d.ts",
+    "src/**/*.web.ts",
+    "src/**/*.web.tsx"
+  ]
 }

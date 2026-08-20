@@ -18,7 +18,7 @@ import Animated, {
   withSpring, 
   interpolateColor 
 } from "react-native-reanimated";
-import { MOCK_USER } from "@/constants/mockData";
+import { useUser } from "@/api/hooks";
 import { useTheme } from "@/context/ThemeContext";
 import { useColors } from "@/hooks/useColors";
 
@@ -117,6 +117,7 @@ const CylindricalToggle = ({ value, onValueChange }: { value: boolean; onValueCh
 export default function IdentityScreen() {
   const insets = useSafeAreaInsets();
   const colors = useColors();
+  const { data: user } = useUser();
   const { theme, setTheme } = useTheme();
   const [settingsModal, setSettingsModal] = useState<string | null>(null);
   const [settingsData, setSettingsData] = useState(INITIAL_SETTINGS);
@@ -204,7 +205,7 @@ export default function IdentityScreen() {
       >
         <View style={styles.styleCard}>
           <View style={styles.colorStripes}>
-            {MOCK_USER.palette.map((color, i) => (
+            {user.palette.map((color, i) => (
               <View key={i} style={[styles.colorStripe, { backgroundColor: color }]} />
             ))}
           </View>
