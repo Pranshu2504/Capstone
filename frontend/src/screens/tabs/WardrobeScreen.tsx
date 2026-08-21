@@ -29,7 +29,6 @@ const getWoodTone = (theme: 'light' | 'dark') => ({
 });
 
 // ─── Static Data ─────────────────────────────────────────────────────────────
-const FILTER_PILLS = ['all', 'office', 'casual', 'events', 'date', 'indian', 'unused'];
 
 /** Stroke colour for the icon shown before a piece has a photo. */
 const STROKE_FALLBACK = '#3A3A3A';
@@ -277,7 +276,6 @@ export default function WardrobeScreen() {
   const colors = useColors();
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
-  const [activeFilter, setActiveFilter] = useState('all');
   const [showImportModal, setShowImportModal] = useState(false);
   const [importLink, setImportLink] = useState('');
   const [uploadNote, setUploadNote] = useState<string | null>(null);
@@ -342,11 +340,6 @@ export default function WardrobeScreen() {
     navigation.navigate('lens');
   };
 
-  const handleFilterPress = (pill: string) => {
-    ReactNativeHapticFeedback.trigger('impactLight');
-    setActiveFilter(pill);
-  };
-
   return (
     <View style={[s.root, { paddingTop: topPad, backgroundColor: colors.background }]}>
 
@@ -365,39 +358,6 @@ export default function WardrobeScreen() {
           </TouchableOpacity>
         </View>
       </View>
- 
-      {/* ── Wardrobe Health Strip ── */}
-      <View style={[s.healthStrip, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
-        <Feather name="activity" size={14} color={colors.primary} style={{ marginRight: 2 }} />
-        <Text style={[s.healthLabel, { color: colors.primary }]}>wardrobe health</Text>
-        <View style={[s.trackOuter, { backgroundColor: colors.muted }]}>
-          <View style={[s.trackFill, { width: '78%', backgroundColor: colors.primary }]} />
-        </View>
-        <Text style={[s.healthPct, { color: colors.primary }]}>78%</Text>
-      </View>
-
-      {/* ── Filter Pill Bar ── */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={[s.filterBar, { backgroundColor: colors.background, borderBottomColor: colors.border }]}
-        contentContainerStyle={s.filterScroll}
-      >
-        {FILTER_PILLS.map((pill) => {
-          const active = activeFilter === pill;
-          return (
-            <TouchableOpacity
-              key={pill}
-              onPress={() => handleFilterPress(pill)}
-              style={[s.pill, active ? [s.pillActive, { backgroundColor: colors.primary }] : [s.pillInactive, { backgroundColor: colors.card, borderColor: colors.border }]]}
-            >
-              <Text style={[s.pillText, active ? { color: colors.primaryForeground } : { color: colors.mutedForeground }]}>
-                {pill}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </ScrollView>
 
       {/* ── Main Scroll ── */}
       <ScrollView
@@ -598,23 +558,6 @@ const s = StyleSheet.create({
   headerTitle:  { fontFamily: 'Inter_400Regular', fontSize: 12, color: '#C9A84C', letterSpacing: 1.5, flex: 1 },
   headerIcons:  { flexDirection: 'row', gap: 6 },
   iconBtn:      { width: 24, height: 24, borderRadius: 12, backgroundColor: '#1F1208', borderWidth: 0.5, borderColor: 'rgba(201,168,76,0.2)', alignItems: 'center', justifyContent: 'center' },
-
-  // Health strip
-  healthStrip:  { borderBottomWidth: 1, paddingHorizontal: 16, paddingVertical: 14, flexDirection: 'row', alignItems: 'center', gap: 8 },
-  healthLabel:  { fontFamily: 'Inter_500Medium', fontSize: 14 },
-  trackOuter:   { flex: 1, height: 5, borderRadius: 3, overflow: 'hidden' },
-  trackFill:    { height: '100%', borderRadius: 3 },
-  healthPct:    { fontFamily: 'Inter_500Medium', fontSize: 14 },
-
-  // Filter pills
-  filterBar:    { height: 52, borderBottomWidth: 1 },
-  filterScroll: { paddingHorizontal: 16, gap: 8, flexDirection: 'row', alignItems: 'center', height: 52 },
-  pill:         { borderRadius: 20, paddingHorizontal: 14, paddingVertical: 7 },
-  pillActive:   { },
-  pillInactive: { borderWidth: 0.5 },
-  pillText:     { fontFamily: 'Inter_500Medium', fontSize: 13 },
-  pillTextActive:   { color: '#0A0A0A' },
-  pillTextInactive: { },
 
   // Scroll
   scroll: { paddingHorizontal: 12, paddingBottom: 120, gap: 0 },
