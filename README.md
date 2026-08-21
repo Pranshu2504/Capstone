@@ -17,8 +17,11 @@ An AI wardrobe stylist. One React Native codebase ships to **Android** and to th
 Capstone/
 ├── frontend/     React Native app (Android) + Vite web target — deploys to Vercel
 ├── backend/      Express + Prisma + Postgres API           — deploys to Render
-└── ai/           ML pipelines (body mesh, virtual try-on)  — see the parth-ai branch
+└── ai/           Virtual try-on service (FASHN API)        — deploys to Render
 ```
+
+Three services, and the two backends are independent: `backend/` serves wardrobe
+data, `ai/` runs try-on. They cannot share a port, so `ai/` listens on **4001**.
 
 The web build reuses `frontend/src` and `frontend/App.tsx` **verbatim**. Nothing in
 the screens branches on platform for the sake of the web port: `vite.config.ts`
@@ -57,7 +60,25 @@ npm run web
 > `--legacy-peer-deps` is required: the React Native 0.81 dependency graph pins peer
 > ranges that npm's strict resolver rejects.
 
-### 3. Frontend (Android) — unchanged
+### 3. Try-on service — http://localhost:4001
+
+```bash
+cd ai
+cp .env.example .env          # set FASHN_API_KEY and PORT=4001
+npm install
+npm run dev
+```
+
+Check it: `curl localhost:4001/api/health` → `{"status":"ok",...}`
+
+`FASHN_API_KEY` is a **paid** credential — `tryon-v1.6` costs 1 credit per image,
+`tryon-max` up to 5. Get one at [app.fashn.ai](https://app.fashn.ai) → Developer
+API. Without it the rest of the app runs fine; only try-on is unavailable.
+
+> `/api/ready` reports FASHN reachability and your remaining credit balance
+> without generating anything. Use it, not a real try-on, to check wiring.
+
+### 4. Frontend (Android) — unchanged
 
 ```bash
 cd frontend
@@ -102,6 +123,47 @@ off. Each hook returns `isLive` to say whether it is showing server data.
 
 ---
 
+## Virtual try-on
+
+`ai/` wraps the [FASHN API](https://docs.fashn.ai). Submit a photo of a person
+plus a garment image, poll the job, get a generated image back.
+
+| Method | Route | Purpose |
+| ------ | ----- | ------- |
+| `GET` | `/api/health` | Liveness — local only, no FASHN call |
+| `GET` | `/api/ready` | FASHN reachability + remaining credits |
+| `POST` | `/api/tryon` | Submit a try-on (multipart) |
+| `GET` | `/api/tryon/:jobId` | Poll one job |
+| `GET` | `/api/tryon` | Recent jobs |
+| `DELETE` | `/api/tryon/:jobId` | Forget a job |
+
+`POST /api/tryon` takes `model_image` and `garment_image` as file parts, or
+`model_image_url` / `garment_image_url` if FASHN can fetch them itself. Pass
+`wait=true` to block until the image is ready instead of polling.
+
+### Getting good results
+
+**Feed it one garment, not an outfit.** FASHN applies a single item. Handing it
+a flat-lay containing a coat, shirt, trousers and belt makes it merge them into
+one invented garment — which looks like a bug and is not.
+
+**Set `category` explicitly.** It defaults to `auto`, which has to guess and
+guesses badly on busy images. When trying on a known wardrobe item, pass the
+category you already have: `tops`, `bottoms`, or `one-pieces`.
+
+Also set `garment_photo_type` — `flat-lay` for a product shot, `model` for a
+photo of someone wearing it.
+
+### Result URLs are service-relative
+
+Images come back as `/static/outputs/….png`, relative to the try-on service —
+not to the web app. The client prefixes them via `absoluteUrl()` in
+`frontend/src/services/tryOnApi.ts`. Anything else consuming this API must do
+the same, or use the `cdnUrl` field, which is absolute but **expires after 3
+days**.
+
+---
+
 ## Deploying
 
 ### Backend → Render
@@ -128,13 +190,35 @@ overwrites real data. Set `AUTO_SEED=false` to opt out.
 Import the repo and set **Root Directory to `frontend`** — `frontend/vercel.json`
 supplies the rest (build command, output directory, SPA rewrites, asset caching).
 
-Set one environment variable:
+Set two environment variables:
 
-| Variable       | Value                              |
-| -------------- | ---------------------------------- |
-| `VITE_API_URL` | `https://<your-service>.onrender.com` |
+| Variable          | Value                                    | Points at |
+| ----------------- | ---------------------------------------- | --------- |
+| `VITE_API_URL`    | `https://<wardrobe-service>.onrender.com` | `backend/` |
+| `VITE_AI_API_URL` | `https://<tryon-service>.onrender.com`    | `ai/` |
 
-It is read at **build time**, so change it and redeploy for it to take effect.
+**Both are read at build time, not runtime.** Vite compiles their values
+directly into the JavaScript bundle, so:
+
+- Setting a variable *after* a deploy does nothing until you **redeploy**.
+- If one is unset at build time, the local fallback in `frontend/src/config/`
+  (`http://localhost:4000` / `http://localhost:4001`) is what gets compiled in —
+  and every visitor's browser will then try to reach *their own* machine on that
+  port, which fails. The symptom looks like a CORS or server problem and is
+  neither.
+
+Deploying the Render services and setting `FASHN_API_KEY` there does **not**
+address this. That key lets the try-on service talk to FASHN, server to server.
+It has nothing to do with how the browser locates the try-on service — that is
+`VITE_AI_API_URL` alone.
+
+To check what a live build actually contains:
+
+```bash
+curl -s https://<your-app>.vercel.app/assets/index-*.js | grep -o 'localhost:400[01]'
+```
+
+Any hit means a variable was missing at build time.
 
 ---
 
