@@ -16,7 +16,7 @@ calendarRouter.get(
     const query = rangeSchema.safeParse(req.query);
     if (!query.success) throw new HttpError(400, 'Invalid query', query.error.flatten());
 
-    const user = await getCurrentUser();
+    const user = await getCurrentUser(req);
     const { from, to } = query.data;
 
     const days = await prisma.plannedDay.findMany({
@@ -59,7 +59,7 @@ calendarRouter.put(
     const parsed = upsertSchema.safeParse(req.body);
     if (!parsed.success) throw new HttpError(400, 'Invalid body', parsed.error.flatten());
 
-    const user = await getCurrentUser();
+    const user = await getCurrentUser(req);
     const { date, label, colors, outfitId } = parsed.data;
 
     if (outfitId) {
@@ -83,7 +83,7 @@ calendarRouter.put(
 calendarRouter.delete(
   '/:date',
   asyncHandler(async (req, res) => {
-    const user = await getCurrentUser();
+    const user = await getCurrentUser(req);
     const date = parseDate(req.params.date);
     const existing = await prisma.plannedDay.findUnique({
       where: { userId_date: { userId: user.id, date } },

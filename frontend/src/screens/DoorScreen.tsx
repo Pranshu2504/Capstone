@@ -1,14 +1,12 @@
-import React, { useState, useRef } from "react";
+import React, { useRef, useState } from "react";
 import {
   View,
   StyleSheet,
-  Dimensions,
   PanResponder,
   Animated,
   TouchableOpacity,
   Text,
   TextInput,
-  Image,
   ImageBackground,
   Platform,
 } from "react-native";
@@ -16,22 +14,42 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useColors } from "@/hooks/useColors";
+import { useAuth } from "@/context/AuthContext";
 import ReactNativeHapticFeedback from "react-native-haptic-feedback";
+import { SCREEN_WIDTH } from '@/constants/layout';
 
-const { width, height } = Dimensions.get("window");
+const width = SCREEN_WIDTH;
+
+type Mode = "login" | "register";
 
 export default function DoorScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
+  const { session, isLoaded, signUp, signIn } = useAuth();
+
   const [doorOpen, setDoorOpen] = useState(false);
-  const [showLogin, setShowLogin] = useState(false);
+  const [mode, setMode] = useState<Mode>("login");
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
-  const doorAnim = useRef(new Animated.Value(0)).current;
   const loginAnim = useRef(new Animated.Value(0)).current;
   const swipeAnim = useRef(new Animated.Value(0)).current;
+
+  // A returning user with a persisted session skips the door entirely.
+  const hasCheckedSession = useRef(false);
+  React.useEffect(() => {
+    if (!isLoaded || hasCheckedSession.current) return;
+    hasCheckedSession.current = true;
+    if (session) {
+      navigation.reset({ index: 0, routes: [{ name: "Main" }] });
+    }
+  }, [isLoaded, session, navigation]);
 
   const openDoor = useRef(() => {
     ReactNativeHapticFeedback.trigger("impactHeavy");
@@ -45,7 +63,7 @@ export default function DoorScreen() {
         toValue: 1,
         duration: 500,
         useNativeDriver: true,
-      }).start(() => setShowLogin(true));
+      }).start();
     });
   }).current;
 
@@ -79,6 +97,49 @@ export default function DoorScreen() {
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
 
+  const switchMode = (next: Mode) => {
+    ReactNativeHapticFeedback.trigger("impactLight");
+    setMode(next);
+    setError(null);
+    setInfo(null);
+  };
+
+  const handleSubmit = async () => {
+    setError(null);
+    setInfo(null);
+
+    const trimmedEmail = email.trim();
+    if (mode === "register") {
+      if (!name.trim()) return setError("enter your name");
+      if (!trimmedEmail) return setError("enter your email");
+      if (password.length < 6) return setError("password must be at least 6 characters");
+      if (password !== confirmPassword) return setError("passwords don't match");
+    } else {
+      if (!trimmedEmail || !password) return setError("enter your email and password");
+    }
+
+    setSubmitting(true);
+    try {
+      ReactNativeHapticFeedback.trigger("impactLight");
+      if (mode === "register") {
+        const { needsEmailConfirmation } = await signUp(name.trim(), trimmedEmail, password);
+        if (needsEmailConfirmation) {
+          setInfo("check your email to confirm your account, then sign in.");
+          setMode("login");
+        } else {
+          navigation.reset({ index: 0, routes: [{ name: "Interview" }] });
+        }
+      } else {
+        await signIn(trimmedEmail, password);
+        navigation.reset({ index: 0, routes: [{ name: "Main" }] });
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "something went wrong");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   if (doorOpen) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -94,7 +155,7 @@ export default function DoorScreen() {
           style={[
             styles.loginPanel,
             {
-              top: topPad + 80,
+              top: topPad + 60,
               opacity: loginAnim,
               transform: [
                 {
@@ -108,8 +169,21 @@ export default function DoorScreen() {
           ]}
         >
           <Text style={[styles.zoraLogotype, { color: colors.brass }]}>ZORA</Text>
+          <Text style={[styles.panelSubtitle, { color: colors.mutedForeground }]}>
+            {mode === "login" ? "welcome back" : "create your account"}
+          </Text>
 
           <View style={styles.inputGroup}>
+            {mode === "register" && (
+              <TextInput
+                style={[styles.hairlineInput, { color: colors.warmWhite, borderBottomColor: colors.border }]}
+                placeholder="full name"
+                placeholderTextColor={colors.mutedForeground}
+                value={name}
+                onChangeText={setName}
+                autoCapitalize="words"
+              />
+            )}
             <TextInput
               style={[styles.hairlineInput, { color: colors.warmWhite, borderBottomColor: colors.border }]}
               placeholder="email"
@@ -118,6 +192,7 @@ export default function DoorScreen() {
               onChangeText={setEmail}
               keyboardType="email-address"
               autoCapitalize="none"
+              autoCorrect={false}
             />
             <TextInput
               style={[styles.hairlineInput, { color: colors.warmWhite, borderBottomColor: colors.border }]}
@@ -127,37 +202,41 @@ export default function DoorScreen() {
               onChangeText={setPassword}
               secureTextEntry
             />
+            {mode === "register" && (
+              <TextInput
+                style={[styles.hairlineInput, { color: colors.warmWhite, borderBottomColor: colors.border }]}
+                placeholder="confirm password"
+                placeholderTextColor={colors.mutedForeground}
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                secureTextEntry
+              />
+            )}
           </View>
+
+          {error && (
+            <Text style={[styles.feedbackText, { color: colors.destructive }]}>{error}</Text>
+          )}
+          {info && (
+            <Text style={[styles.feedbackText, { color: colors.brass }]}>{info}</Text>
+          )}
 
           <TouchableOpacity
-            style={[styles.enterButton, { backgroundColor: colors.brass }]}
-            onPress={() => {
-              ReactNativeHapticFeedback.trigger("impactLight");
-              navigation.reset({ index: 0, routes: [{ name: "Main" }] });
-            }}
+            style={[styles.enterButton, { backgroundColor: colors.brass, opacity: submitting ? 0.6 : 1 }]}
+            onPress={handleSubmit}
             activeOpacity={0.8}
+            disabled={submitting}
           >
-            <Text style={[styles.enterButtonText, { color: colors.charcoal }]}>enter</Text>
+            <Text style={[styles.enterButtonText, { color: colors.charcoal }]}>
+              {submitting ? "please wait…" : mode === "login" ? "sign in" : "create account"}
+            </Text>
           </TouchableOpacity>
 
-          <View style={styles.socialRow}>
-            <TouchableOpacity
-              style={[styles.socialButton, { borderColor: colors.border }]}
-              onPress={() => navigation.reset({ index: 0, routes: [{ name: "Main" }] })}
-            >
-              <Text style={{ color: colors.warmWhite, fontFamily: "Inter_500Medium", fontSize: 13 }}>G</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.socialButton, { borderColor: colors.border }]}
-              onPress={() => navigation.reset({ index: 0, routes: [{ name: "Main" }] })}
-            >
-              <Text style={{ color: colors.warmWhite, fontFamily: "Inter_500Medium", fontSize: 13 }}>A</Text>
-            </TouchableOpacity>
-          </View>
-
-          <TouchableOpacity onPress={() => navigation.navigate("Interview")}>
+          <TouchableOpacity onPress={() => switchMode(mode === "login" ? "register" : "login")}>
             <Text style={[styles.ghostLink, { color: colors.mutedForeground }]}>
-              first time? let's build your wardrobe
+              {mode === "login"
+                ? "first time? let's build your wardrobe"
+                : "already have an account? sign in"}
             </Text>
           </TouchableOpacity>
         </Animated.View>
@@ -250,12 +329,13 @@ const styles = StyleSheet.create({
     position: "absolute",
     alignSelf: "center",
     width: width * 0.82,
-    backgroundColor: "rgba(20,15,10,0.88)",
+    maxWidth: 360,
+    backgroundColor: "rgba(20,15,10,0.92)",
     borderRadius: 8,
     borderWidth: 1,
     borderColor: "rgba(201,168,76,0.35)",
     padding: 32,
-    gap: 20,
+    gap: 18,
     alignItems: "center",
   },
   zoraLogotype: {
@@ -263,9 +343,16 @@ const styles = StyleSheet.create({
     fontSize: 20,
     letterSpacing: 8,
   },
+  panelSubtitle: {
+    fontFamily: "Inter_400Regular",
+    fontSize: 12,
+    letterSpacing: 2,
+    textTransform: "uppercase",
+    marginTop: -10,
+  },
   inputGroup: {
     width: "100%",
-    gap: 20,
+    gap: 18,
   },
   hairlineInput: {
     fontFamily: "Inter_400Regular",
@@ -273,6 +360,12 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderBottomWidth: StyleSheet.hairlineWidth,
     width: "100%",
+  },
+  feedbackText: {
+    fontFamily: "Inter_400Regular",
+    fontSize: 12,
+    textAlign: "center",
+    lineHeight: 17,
   },
   enterButton: {
     paddingVertical: 14,
@@ -286,18 +379,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     letterSpacing: 3,
     textTransform: "uppercase",
-  },
-  socialRow: {
-    flexDirection: "row",
-    gap: 16,
-  },
-  socialButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    borderWidth: 1,
-    alignItems: "center",
-    justifyContent: "center",
   },
   ghostLink: {
     fontFamily: "Inter_400Regular",

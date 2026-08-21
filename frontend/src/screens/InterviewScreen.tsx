@@ -2,7 +2,6 @@ import React, { useState, useRef } from "react";
 import {
   View,
   StyleSheet,
-  Dimensions,
   TouchableOpacity,
   Text,
   TextInput,
@@ -15,14 +14,15 @@ import { useNavigation } from "@react-navigation/native";
 import Feather from "react-native-vector-icons/Feather";
 import { useColors } from "@/hooks/useColors";
 import { INTERVIEW_QUESTIONS } from "@/constants/mockData";
-import { useUser } from "@/api/hooks";
+import { useUpdateProfile } from "@/api/hooks";
 import ReactNativeHapticFeedback from "react-native-haptic-feedback";
+import { SCREEN_WIDTH } from '@/constants/layout';
 
-const { width } = Dimensions.get("window");
+const width = SCREEN_WIDTH;
 
 export default function InterviewScreen() {
   const colors = useColors();
-  const { data: user } = useUser();
+  const updateProfile = useUpdateProfile();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
 
@@ -37,6 +37,19 @@ export default function InterviewScreen() {
   const bottomPad = Platform.OS === "web" ? 34 : insets.bottom;
 
   const currentQ = INTERVIEW_QUESTIONS[step];
+
+  // "Your style DNA" is built entirely from this session's answers — not
+  // whatever profile happened to be loaded — so it's correct offline and
+  // right after a fresh sign-up alike.
+  const moodQuestion = INTERVIEW_QUESTIONS.find((q) => q.type === "tiles");
+  const paletteQuestion = INTERVIEW_QUESTIONS.find((q) => q.type === "palette");
+  const moodKeywords = moodQuestion ? selections[moodQuestion.id] ?? [] : [];
+  const paletteColors = paletteQuestion
+    ? (selections[paletteQuestion.id] ?? []).flatMap((label) => {
+        const opt = paletteQuestion.options?.find((o) => o.label === label);
+        return opt && "color" in opt ? [opt.color as string] : [];
+      })
+    : [];
 
   const animateTransition = (next: () => void) => {
     Animated.sequence([
@@ -61,25 +74,37 @@ export default function InterviewScreen() {
     if (step < INTERVIEW_QUESTIONS.length - 1) {
       animateTransition(() => setStep(step + 1));
     } else {
+      // Best-effort: the DNA card below reads from local state either way,
+      // so a flaky connection here doesn't block finishing the interview.
+      updateProfile.mutate({
+        moodKeywords,
+        palette: paletteColors,
+        favoritesBrand: brandText.trim() || undefined,
+      });
       animateTransition(() => setShowEnd(true));
     }
   };
 
   if (showEnd) {
     return (
-      <View style={[styles.container, { paddingTop: topPad + 40, paddingBottom: bottomPad + 20 }]}>
+      <View
+        style={[
+          styles.container,
+          { backgroundColor: colors.background, paddingTop: topPad + 40, paddingBottom: bottomPad + 20 },
+        ]}
+      >
         <Animated.View style={[styles.endCard, { opacity: fadeAnim }]}>
           <Text style={[styles.endTitle, { color: colors.brass }]}>your style DNA</Text>
           <Text style={[styles.endSub, { color: colors.warmWhite }]}>is ready</Text>
 
           <View style={styles.paletteRow}>
-            {user.palette.map((c, i) => (
+            {paletteColors.map((c, i) => (
               <View key={i} style={[styles.paletteDot, { backgroundColor: c }]} />
             ))}
           </View>
 
           <View style={styles.keywordsRow}>
-            {user.moodKeywords.map((k) => (
+            {moodKeywords.map((k) => (
               <View key={k} style={[styles.keywordChip, { borderColor: colors.brass }]}>
                 <Text style={[styles.keywordText, { color: colors.brass }]}>{k}</Text>
               </View>
@@ -103,7 +128,12 @@ export default function InterviewScreen() {
   }
 
   return (
-    <View style={[styles.container, { paddingTop: topPad + 20, paddingBottom: bottomPad + 16 }]}>
+    <View
+      style={[
+        styles.container,
+        { backgroundColor: colors.background, paddingTop: topPad + 20, paddingBottom: bottomPad + 16 },
+      ]}
+    >
       <View style={styles.header}>
         <Text style={[styles.interviewLabel, { color: colors.brass }]}>The Interview</Text>
         <Text style={[styles.stepLabel, { color: colors.mutedForeground }]}>
