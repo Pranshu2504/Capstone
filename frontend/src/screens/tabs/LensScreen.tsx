@@ -8,7 +8,6 @@ import {
   TextInput,
   Platform,
   Modal,
-  Dimensions,
   Image,
   ActivityIndicator,
 } from "react-native";
@@ -21,8 +20,10 @@ import ReactNativeHapticFeedback from "react-native-haptic-feedback";
 import { pickImage, type PickedImage, type PickSource } from "@/utils/pickImage";
 import { useTryOn } from "@/hooks/useTryOn";
 import { checkTryOnService } from "@/services/tryOnApi";
+import { SCREEN_WIDTH, SCREEN_HEIGHT } from '@/constants/layout';
 
-const { width, height } = Dimensions.get("window");
+const width = SCREEN_WIDTH;
+const height = SCREEN_HEIGHT;
 
 type Mode = "mirror" | "link";
 

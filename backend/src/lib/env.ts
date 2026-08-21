@@ -15,6 +15,18 @@ export const env = {
     .split(',')
     .map((o) => o.trim())
     .filter(Boolean),
-  // The single demo user the API serves until auth lands.
+  // The single demo user the API serves for unauthenticated requests.
   demoUserHandle: process.env.DEMO_USER_HANDLE ?? '@aria.chen',
+  // Optional: without these, /api/auth/* returns 503 and every request falls
+  // back to the demo user, same as before Supabase auth existed.
+  supabaseUrl: process.env.SUPABASE_URL,
+  supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
+  // Private Storage bucket holding user garment photos. Created on demand.
+  wardrobeBucket: process.env.SUPABASE_WARDROBE_BUCKET ?? 'wardrobe',
+
+  // ── Stylist (Google Gemini) ─────────────────────────────────────────────
+  // Optional: without a key, garment uploads still work (they just skip the
+  // vision pass) and /api/recommend falls back to deterministic scoring.
+  geminiApiKey: process.env.GEMINI_API_KEY,
+  geminiModel: process.env.GEMINI_MODEL ?? 'gemini-3.7-flash',
 };

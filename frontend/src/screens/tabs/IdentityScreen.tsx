@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   Text,
   Platform,
-  Dimensions,
   Modal,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -21,8 +20,9 @@ import Animated, {
 import { useUser } from "@/api/hooks";
 import { useTheme } from "@/context/ThemeContext";
 import { useColors } from "@/hooks/useColors";
+import { SCREEN_WIDTH } from '@/constants/layout';
 
-const { width } = Dimensions.get("window");
+const width = SCREEN_WIDTH;
 
 const RADAR_DIMS = [
   { label: "Formal", opposite: "Casual", value: 0.72 },

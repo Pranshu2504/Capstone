@@ -7,7 +7,6 @@ import {
   Text,
   Platform,
   ImageBackground,
-  Dimensions,
   Modal,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -16,8 +15,9 @@ import Feather from "react-native-vector-icons/Feather";
 import ReactNativeHapticFeedback from "react-native-haptic-feedback";
 import { useColors } from "@/hooks/useColors";
 import { useOutfitToday } from "@/api/hooks";
+import { SCREEN_WIDTH } from '@/constants/layout';
 
-const { width } = Dimensions.get("window");
+const width = SCREEN_WIDTH;
 
 const CARD_W = (width - 48) / 2;
 
@@ -143,6 +143,29 @@ export default function MirrorScreen() {
             </View>
           </ImageBackground>
         </View>
+
+        {/* ── The main ask: let ZORA assemble today's outfit ── */}
+        <TouchableOpacity
+          style={[styles.stylistCTA, { borderColor: colors.brass, backgroundColor: colors.card }]}
+          activeOpacity={0.85}
+          onPress={() => {
+            ReactNativeHapticFeedback.trigger("impactMedium");
+            navigation.navigate("Stylist");
+          }}
+        >
+          <View style={[styles.stylistIcon, { backgroundColor: colors.brassSubtle }]}>
+            <Feather name="feather" size={16} color={colors.brass} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.stylistCTATitle, { color: colors.warmWhite }]}>
+              what should I wear today?
+            </Text>
+            <Text style={[styles.stylistCTASub, { color: colors.mutedForeground }]}>
+              a few questions, then a look built from your wardrobe
+            </Text>
+          </View>
+          <Feather name="arrow-right" size={16} color={colors.brass} />
+        </TouchableOpacity>
 
         {/* ══════════════ PULSE SECTION ══════════════ */}
 
@@ -349,6 +372,34 @@ const styles = StyleSheet.create({
   },
 
   // ── Pulse styles ──
+  stylistCTA: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    marginTop: 20,
+  },
+  stylistIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  stylistCTATitle: {
+    fontFamily: "PlayfairDisplay_700Bold",
+    fontSize: 16,
+    letterSpacing: -0.2,
+  },
+  stylistCTASub: {
+    fontFamily: "Inter_400Regular",
+    fontSize: 11,
+    lineHeight: 16,
+    marginTop: 3,
+  },
   pulseHeader: {
     flexDirection: "row",
     justifyContent: "space-between",

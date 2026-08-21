@@ -11,6 +11,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import Feather from "react-native-vector-icons/Feather";
 import ReactNativeHapticFeedback from "react-native-haptic-feedback";
+import { useColors } from "@/hooks/useColors";
 
 const FRIENDS_ACTIVITY = [
   { initials: "RG", name: "Rahul G.", action: "added 3 new places to wardrobe", time: "2h ago", swatches: ["#2A2020","#1A2030","#201810"] },
@@ -18,6 +19,7 @@ const FRIENDS_ACTIVITY = [
 ];
 
 export default function FriendsScreen() {
+  const colors = useColors();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
 
@@ -25,7 +27,7 @@ export default function FriendsScreen() {
   const bottomPad = Platform.OS === "web" ? 34 : insets.bottom;
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { paddingTop: topPad + 8 }]}>
         <TouchableOpacity 
           style={styles.iconBtn} 
@@ -113,7 +115,6 @@ export default function FriendsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#090909",
   },
   header: {
     flexDirection: "row",

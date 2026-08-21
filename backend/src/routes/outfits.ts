@@ -22,8 +22,8 @@ const todayUTC = () => new Date(`${new Date().toISOString().slice(0, 10)}T00:00:
 
 outfitsRouter.get(
   '/',
-  asyncHandler(async (_req, res) => {
-    const user = await getCurrentUser();
+  asyncHandler(async (req, res) => {
+    const user = await getCurrentUser(req);
     const outfits = await prisma.outfit.findMany({
       where: { userId: user.id },
       include: withItems,
@@ -39,8 +39,8 @@ outfitsRouter.get(
  */
 outfitsRouter.get(
   '/today',
-  asyncHandler(async (_req, res) => {
-    const user = await getCurrentUser();
+  asyncHandler(async (req, res) => {
+    const user = await getCurrentUser(req);
     const today = todayUTC();
 
     const outfit =
@@ -67,7 +67,7 @@ outfitsRouter.get(
 outfitsRouter.get(
   '/:id',
   asyncHandler(async (req, res) => {
-    const user = await getCurrentUser();
+    const user = await getCurrentUser(req);
     const outfit = await prisma.outfit.findFirst({
       where: { id: req.params.id, userId: user.id },
       include: withItems,
@@ -92,7 +92,7 @@ outfitsRouter.post(
     const parsed = createSchema.safeParse(req.body);
     if (!parsed.success) throw new HttpError(400, 'Invalid body', parsed.error.flatten());
 
-    const user = await getCurrentUser();
+    const user = await getCurrentUser(req);
     const { itemIds, date, ...rest } = parsed.data;
 
     // Reject item ids belonging to another user rather than silently dropping them.
@@ -121,7 +121,7 @@ outfitsRouter.post(
 outfitsRouter.delete(
   '/:id',
   asyncHandler(async (req, res) => {
-    const user = await getCurrentUser();
+    const user = await getCurrentUser(req);
     const existing = await prisma.outfit.findFirst({
       where: { id: req.params.id, userId: user.id },
       select: { id: true },

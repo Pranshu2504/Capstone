@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   Text,
   Platform,
-  Dimensions,
   Modal,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -14,8 +13,9 @@ import { useNavigation } from "@react-navigation/native";
 import Feather from "react-native-vector-icons/Feather";
 import { useColors } from "@/hooks/useColors";
 import ReactNativeHapticFeedback from "react-native-haptic-feedback";
+import { SCREEN_WIDTH } from '@/constants/layout';
 
-const { width } = Dimensions.get("window");
+const width = SCREEN_WIDTH;
 
 const DAYS_ABR = ["M", "T", "W", "T", "F", "S", "S"];
 const FULL_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
