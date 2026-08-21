@@ -9,6 +9,7 @@ import {
   Modal,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useNavigation } from "@react-navigation/native";
 import Feather from "react-native-vector-icons/Feather";
 import ReactNativeHapticFeedback from "react-native-haptic-feedback";
 import Animated, { 
@@ -116,6 +117,7 @@ const CylindricalToggle = ({ value, onValueChange }: { value: boolean; onValueCh
 
 export default function IdentityScreen() {
   const insets = useSafeAreaInsets();
+  const navigation = useNavigation<any>();
   const colors = useColors();
   const { data: user } = useUser();
   const { theme, setTheme } = useTheme();
@@ -193,7 +195,20 @@ export default function IdentityScreen() {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { paddingTop: topPad + 8 }]}>
-        <Text style={[styles.screenTitle, { color: colors.text }]}>The Identity</Text>
+        <View style={styles.headerLeft}>
+          {/* Shown only when this was pushed over something — as a tab there
+              is nothing behind it, and a dead back arrow is worse than none. */}
+          {navigation.canGoBack() && (
+            <TouchableOpacity
+              style={[styles.iconBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
+              onPress={() => navigation.goBack()}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            >
+              <Feather name="chevron-left" size={18} color={colors.primary} />
+            </TouchableOpacity>
+          )}
+          <Text style={[styles.screenTitle, { color: colors.text }]}>The Identity</Text>
+        </View>
         <TouchableOpacity style={[styles.iconBtn, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <Feather name="share-2" size={14} color={colors.primary} />
         </TouchableOpacity>
@@ -479,6 +494,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 14,
   },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flexShrink: 1,
+  },
   screenTitle: {
     fontFamily: "CormorantGaramond_700Bold",
     fontSize: 22,
@@ -547,7 +568,7 @@ const styles = StyleSheet.create({
   },
   statLabel: {
     fontFamily: "Inter_400Regular",
-    fontSize: 9,
+    fontSize: 11,
     color: "rgba(240,236,228,0.5)",
     letterSpacing: 1,
     textTransform: "uppercase",
@@ -621,7 +642,7 @@ const styles = StyleSheet.create({
   },
   radarLabel: {
     fontFamily: "Inter_400Regular",
-    fontSize: 9,
+    fontSize: 11,
     color: "#A3A3A3",
     width: 60,
     textAlign: "center",

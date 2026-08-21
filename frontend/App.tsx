@@ -97,7 +97,7 @@ function TabNavigator() {
         },
         tabBarLabelStyle: {
           fontFamily: 'Inter_400Regular',
-          fontSize: 9,
+          fontSize: 11,
           letterSpacing: 1,
           textTransform: 'uppercase',
           marginTop: 2,
