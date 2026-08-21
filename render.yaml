@@ -25,6 +25,38 @@ services:
       - key: CORS_ORIGIN
         sync: false
 
+  - type: web
+    name: zora-ai
+    runtime: node
+    plan: free
+    region: oregon
+    rootDir: ai
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # Create one at https://app.fashn.ai → Developer API → Create new API key.
+      - key: FASHN_API_KEY
+        sync: false
+      - key: FASHN_DEFAULT_MODEL
+        value: tryon-v1.6
+      - key: TRYON_TIMEOUT_MS
+        value: "180000"
+      - key: TRYON_POLL_INTERVAL_MS
+        value: "3000"
+      - key: STORAGE_DIR
+        value: storage
+      - key: PERSIST_OUTPUTS
+        value: "true"
+      # Set this to the Vercel production URL once known. Vercel *.vercel.app
+      # preview origins should be added here too, comma-separated, or leave
+      # "*" for now and tighten later.
+      - key: CORS_ORIGINS
+        sync: false
+
 databases:
   - name: zora-db
     plan: free
