@@ -31,7 +31,10 @@ services:
     plan: free
     region: oregon
     rootDir: ai
-    buildCommand: npm ci && npm run build
+    # --include=dev for the same reason as zora-api above: NODE_ENV=production
+    # makes npm skip devDependencies, but `npm run build` is tsc, and both
+    # typescript and the @types packages live there.
+    buildCommand: npm ci --include=dev && npm run build
     startCommand: npm start
     healthCheckPath: /api/health
     autoDeploy: true
@@ -49,8 +52,12 @@ services:
         value: "3000"
       - key: STORAGE_DIR
         value: storage
+      # Free instances have no persistent disk, so mirroring FASHN outputs
+      # locally loses them on every restart and deploy while looking like it
+      # worked. Off, the API returns FASHN's CDN URL — still a 3-day expiry,
+      # but honest about it. Turn on with a paid disk or object storage.
       - key: PERSIST_OUTPUTS
-        value: "true"
+        value: "false"
       # Set this to the Vercel production URL once known. Vercel *.vercel.app
       # preview origins should be added here too, comma-separated, or leave
       # "*" for now and tighten later.
