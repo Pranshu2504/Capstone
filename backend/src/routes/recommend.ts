@@ -3,7 +3,7 @@ import { z } from 'zod';
 
 import { getCurrentUser } from '../lib/currentUser.js';
 import { isStylistConfigured } from '../lib/gemini.js';
-import { asyncHandler, HttpError } from '../lib/http.js';
+import { asyncHandler, HttpError, notFound } from '../lib/http.js';
 import { prisma } from '../lib/prisma.js';
 import { serializeItem, serializeOutfit } from '../lib/serializers.js';
 import { signGarmentPhotos } from '../lib/wardrobeStorage.js';
@@ -54,19 +54,28 @@ recommendRouter.post(
       );
     }
 
-    // Gives the stylist something to avoid repeating.
+    // Past suggestions plus any verdict on them. Rejections are the strongest
+    // steer the stylist gets, so this is worth a join rather than a headline list.
     const recent = await prisma.outfit.findMany({
       where: { userId: user.id },
-      orderBy: { forDate: 'desc' },
-      take: 5,
-      select: { headline: true },
+      orderBy: [{ forDate: 'desc' }, { createdAt: 'desc' }],
+      take: 8,
+      select: {
+        headline: true,
+        liked: true,
+        outfitItems: { select: { item: { select: { name: true } } } },
+      },
     });
 
     const pick = await recommendOutfit({
       user,
       items,
       answers: parsed.data,
-      recentOutfits: recent.map((o) => o.headline),
+      history: recent.map((o) => ({
+        headline: o.headline,
+        itemNames: o.outfitItems.map((oi) => oi.item.name),
+        liked: o.liked,
+      })),
     });
 
     if (!pick) throw new HttpError(422, 'Could not assemble an outfit from your wardrobe.');
@@ -109,5 +118,36 @@ recommendRouter.post(
       stylingNote: pick.stylingNote,
       aiGenerated: pick.aiGenerated,
     });
+  }),
+);
+
+const feedbackSchema = z.object({ liked: z.boolean() });
+
+/**
+ * Records a yes/no on a suggestion.
+ *
+ * The verdict is not just analytics — `recommendOutfit` reads it back on the
+ * next run, so a "no" stops those pieces being offered together again and a
+ * "yes" pulls the next look towards them.
+ */
+recommendRouter.post(
+  '/:id/feedback',
+  asyncHandler(async (req, res) => {
+    const parsed = feedbackSchema.safeParse(req.body);
+    if (!parsed.success) throw new HttpError(400, 'Invalid body', parsed.error.flatten());
+
+    const user = await getCurrentUser(req);
+    const existing = await prisma.outfit.findFirst({
+      where: { id: req.params.id, userId: user.id },
+      select: { id: true },
+    });
+    if (!existing) throw notFound('Outfit');
+
+    const outfit = await prisma.outfit.update({
+      where: { id: existing.id },
+      data: { liked: parsed.data.liked, feedbackAt: new Date() },
+      select: { id: true, liked: true },
+    });
+    res.json(outfit);
   }),
 );

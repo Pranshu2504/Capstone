@@ -75,6 +75,11 @@ model Outfit {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // Null until the wearer says yes or no. Both answers feed the next
+  // suggestion: liked looks steer it, rejected ones are avoided.
+  liked      Boolean?
+  feedbackAt DateTime?
+
   user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   outfitItems OutfitItem[]
   plannedDay  PlannedDay?

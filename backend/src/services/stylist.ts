@@ -14,6 +14,13 @@ export interface StylistAnswers {
   weather?: { tempC?: number; summary?: string };
 }
 
+/** A past suggestion the wearer judged, used to steer the next one. */
+export interface OutfitVerdict {
+  headline: string;
+  itemNames: string[];
+  liked: boolean | null;
+}
+
 export interface StylistPick {
   headline: string;
   subhead: string;
@@ -52,8 +59,16 @@ function wornRecently(item: WardrobeItem): boolean {
   return /today|yesterday|hour|day ago|[1-6] days/.test(last);
 }
 
-function scoreItem(item: WardrobeItem, answers: StylistAnswers): number {
+function scoreItem(
+  item: WardrobeItem,
+  answers: StylistAnswers,
+  history: { likedItems: Set<string>; rejectedItems: Set<string> },
+): number {
   let score = 50;
+
+  // Explicit verdicts outrank every inferred preference below.
+  if (history.rejectedItems.has(item.id)) score -= 55;
+  if (history.likedItems.has(item.id)) score += 30;
 
   if (answers.occasion && item.occasions.includes(answers.occasion)) score += 45;
   else if (answers.occasion && item.occasions.length) score -= 15;
@@ -102,11 +117,15 @@ function scoreItem(item: WardrobeItem, answers: StylistAnswers): number {
  * slot. Deliberately simple and explainable — it is the honest fallback when
  * no Gemini key is set, not a second-rate imitation of the model.
  */
-function scoreOutfit(items: WardrobeItem[], answers: StylistAnswers): StylistPick | null {
+function scoreOutfit(
+  items: WardrobeItem[],
+  answers: StylistAnswers,
+  history: { likedItems: Set<string>; rejectedItems: Set<string> },
+): StylistPick | null {
   if (!items.length) return null;
 
   const ranked = items
-    .map((item) => ({ item, score: scoreItem(item, answers) }))
+    .map((item) => ({ item, score: scoreItem(item, answers, history) }))
     .sort((a, b) => b.score - a.score);
 
   const bestOf = (category: string) =>
@@ -118,9 +137,11 @@ function scoreOutfit(items: WardrobeItem[], answers: StylistAnswers): StylistPic
   const bottom = bestOf('Bottoms');
 
   // A dress only wins if it out-scores the top+bottom pairing it replaces.
-  const dressScore = dress ? scoreItem(dress, answers) : -Infinity;
+  const dressScore = dress ? scoreItem(dress, answers, history) : -Infinity;
   const pairScore =
-    top && bottom ? (scoreItem(top, answers) + scoreItem(bottom, answers)) / 2 : -Infinity;
+    top && bottom
+      ? (scoreItem(top, answers, history) + scoreItem(bottom, answers, history)) / 2
+      : -Infinity;
 
   if (dress && dressScore >= pairScore) {
     chosen.push(dress);
@@ -225,7 +246,7 @@ function describeWardrobe(items: WardrobeItem[]): string {
     .join('\n');
 }
 
-function describeToday(answers: StylistAnswers, recentOutfits: string[]): string {
+function describeToday(answers: StylistAnswers, history: OutfitVerdict[]): string {
   const lines = [
     `occasion: ${answers.occasion ?? 'unspecified'}`,
     `formality wanted: ${answers.formality ?? '3'}/5`,
@@ -237,7 +258,27 @@ function describeToday(answers: StylistAnswers, recentOutfits: string[]): string
     lines.push(`weather: ${Math.round(answers.weather.tempC)}°C ${answers.weather.summary ?? ''}`.trim());
   }
   if (answers.notes?.trim()) lines.push(`their own words: "${answers.notes.trim()}"`);
-  if (recentOutfits.length) lines.push(`recently suggested (avoid repeating): ${recentOutfits.join('; ')}`);
+
+  const liked = history.filter((h) => h.liked === true);
+  const rejected = history.filter((h) => h.liked === false);
+  const unjudged = history.filter((h) => h.liked === null);
+
+  // Rejections are the strongest signal available, so they lead.
+  if (rejected.length) {
+    lines.push(
+      `they said NO to these — do not suggest these combinations again:\n` +
+        rejected.map((h) => `  - "${h.headline}" (${h.itemNames.join(', ')})`).join('\n'),
+    );
+  }
+  if (liked.length) {
+    lines.push(
+      `they said YES to these — more like this:\n` +
+        liked.map((h) => `  - "${h.headline}" (${h.itemNames.join(', ')})`).join('\n'),
+    );
+  }
+  if (unjudged.length) {
+    lines.push(`recently suggested (avoid repeating): ${unjudged.map((h) => h.headline).join('; ')}`);
+  }
   return lines.join('\n');
 }
 
@@ -252,10 +293,20 @@ export async function recommendOutfit(args: {
   user: User;
   items: WardrobeItem[];
   answers: StylistAnswers;
-  recentOutfits: string[];
+  history: OutfitVerdict[];
 }): Promise<StylistPick | null> {
-  const { user, items, answers, recentOutfits } = args;
+  const { user, items, answers, history } = args;
   if (!items.length) return null;
+
+  // Item-level verdicts, inherited from the outfits they appeared in.
+  const byName = new Map(items.map((i) => [i.name, i.id]));
+  const collect = (liked: boolean) =>
+    new Set(
+      history
+        .filter((h) => h.liked === liked)
+        .flatMap((h) => h.itemNames.flatMap((n) => (byName.has(n) ? [byName.get(n)!] : []))),
+    );
+  const verdicts = { likedItems: collect(true), rejectedItems: collect(false) };
 
   if (isStylistConfigured) {
     try {
@@ -278,7 +329,7 @@ export async function recommendOutfit(args: {
               {
                 text: `THEIR STYLE PROFILE\n${profile}\n\nTODAY\n${describeToday(
                   answers,
-                  recentOutfits,
+                  history,
                 )}\n\nTHEIR WARDROBE\n${describeWardrobe(items)}\n\nPick today's outfit.`,
               },
             ],
@@ -298,5 +349,5 @@ export async function recommendOutfit(args: {
     }
   }
 
-  return scoreOutfit(items, answers);
+  return scoreOutfit(items, answers, verdicts);
 }
