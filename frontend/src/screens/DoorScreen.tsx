@@ -35,7 +35,6 @@ export default function DoorScreen() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [info, setInfo] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   const loginAnim = useRef(new Animated.Value(0)).current;
@@ -101,12 +100,10 @@ export default function DoorScreen() {
     ReactNativeHapticFeedback.trigger("impactLight");
     setMode(next);
     setError(null);
-    setInfo(null);
   };
 
   const handleSubmit = async () => {
     setError(null);
-    setInfo(null);
 
     const trimmedEmail = email.trim();
     if (mode === "register") {
@@ -122,13 +119,8 @@ export default function DoorScreen() {
     try {
       ReactNativeHapticFeedback.trigger("impactLight");
       if (mode === "register") {
-        const { needsEmailConfirmation } = await signUp(name.trim(), trimmedEmail, password);
-        if (needsEmailConfirmation) {
-          setInfo("check your email to confirm your account, then sign in.");
-          setMode("login");
-        } else {
-          navigation.reset({ index: 0, routes: [{ name: "Interview" }] });
-        }
+        await signUp(name.trim(), trimmedEmail, password);
+        navigation.reset({ index: 0, routes: [{ name: "Interview" }] });
       } else {
         await signIn(trimmedEmail, password);
         navigation.reset({ index: 0, routes: [{ name: "Main" }] });
@@ -216,9 +208,6 @@ export default function DoorScreen() {
 
           {error && (
             <Text style={[styles.feedbackText, { color: colors.destructive }]}>{error}</Text>
-          )}
-          {info && (
-            <Text style={[styles.feedbackText, { color: colors.brass }]}>{info}</Text>
           )}
 
           <TouchableOpacity
