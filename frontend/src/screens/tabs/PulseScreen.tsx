@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   Text,
   Platform,
-  Dimensions,
   Modal,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -15,8 +14,9 @@ import Feather from "react-native-vector-icons/Feather";
 import ReactNativeHapticFeedback from "react-native-haptic-feedback";
 import { useColors } from "@/hooks/useColors";
 import { useTheme } from "@/context/ThemeContext";
+import { SCREEN_WIDTH } from '@/constants/layout';
 
-const { width } = Dimensions.get("window");
+const width = SCREEN_WIDTH;
 
 type FeedMode = "trending" | "friends" | "for you";
 

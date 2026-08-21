@@ -6,15 +6,17 @@ import {
   TouchableOpacity,
   Text,
   Platform,
-  Dimensions,
   Modal,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import Feather from "react-native-vector-icons/Feather";
 import ReactNativeHapticFeedback from "react-native-haptic-feedback";
+import { SCREEN_WIDTH, SCREEN_HEIGHT } from '@/constants/layout';
+import { useColors } from "@/hooks/useColors";
 
-const { width, height } = Dimensions.get("window");
+const width = SCREEN_WIDTH;
+const height = SCREEN_HEIGHT;
 
 const FOR_YOU_POSTS = [
   { id: "1", title: "weekend capsule", handle: "@minimalist.k", aesthetic: "neutral", bgColor: "#1A2218", tall: false, hasSimilar: true },
@@ -24,6 +26,7 @@ const FOR_YOU_POSTS = [
 ];
 
 export default function ForYouScreen() {
+  const colors = useColors();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
   const [selectedPost, setSelectedPost] = useState<typeof FOR_YOU_POSTS[0] | null>(null);
@@ -35,7 +38,7 @@ export default function ForYouScreen() {
   const rightCol = FOR_YOU_POSTS.filter((_, i) => i % 2 !== 0);
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { paddingTop: topPad + 8 }]}>
         <TouchableOpacity 
           style={styles.iconBtn} 
@@ -169,7 +172,6 @@ export default function ForYouScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#090909",
   },
   header: {
     flexDirection: "row",

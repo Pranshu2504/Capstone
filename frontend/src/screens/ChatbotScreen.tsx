@@ -9,8 +9,8 @@ export default function ChatbotScreen() {
   const colors = useColors();
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: '#0D0D0D' }]}>
-      <View style={[styles.header, { borderBottomColor: '#1A1A1A' }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Feather name="chevron-down" size={28} color={colors.text} />
         </TouchableOpacity>
@@ -19,12 +19,12 @@ export default function ChatbotScreen() {
       </View>
 
       <View style={styles.content}>
-        <View style={[styles.messageBubble, { backgroundColor: '#1A1A1A', borderColor: 'rgba(191, 153, 90, 0.4)' }]}>
+        <View style={[styles.messageBubble, { backgroundColor: colors.surface, borderColor: colors.brassSubtle }]}>
           <Text style={[styles.messageText, { color: colors.text }]}>
             Hi! I am Zora, your personal fashion assistant. How can I help you style your outfit today?
           </Text>
         </View>
-        <Text style={[styles.dummyInfo, { color: '#777777' }]}>
+        <Text style={[styles.dummyInfo, { color: colors.mutedForeground }]}>
           (This is a dummy chat screen. Interactive chat features coming soon.)
         </Text>
       </View>

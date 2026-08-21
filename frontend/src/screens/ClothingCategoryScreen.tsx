@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   Text,
   Platform,
-  Dimensions,
   ViewToken,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -15,6 +14,7 @@ import { useColors } from '@/hooks/useColors';
 import { useTheme } from '@/context/ThemeContext';
 import Feather from 'react-native-vector-icons/Feather';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
+import { SCREEN_WIDTH, SCREEN_HEIGHT } from '@/constants/layout';
 
 export type ClothingItem = {
   id: string;
@@ -31,7 +31,8 @@ const getWoodTone = (theme: 'light' | 'dark') => ({
   bracketBorder: theme === 'dark' ? 'rgba(201,168,76,0.4)' : 'rgba(122,139,111,0.4)',
 });
 
-const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
+const SCREEN_W = SCREEN_WIDTH;
+const SCREEN_H = SCREEN_HEIGHT;
 const CARD_W = SCREEN_W * 0.72;
 const CARD_GAP = 16;
 const SIDE_PAD = (SCREEN_W - CARD_W) / 2;

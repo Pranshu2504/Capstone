@@ -17,6 +17,51 @@
         --zora-bg: #090909;
       }
 
+      /*
+       * These match the RN font family names used across src/ 1:1 (see
+       * src/constants/mockData.ts, styles, etc.) and the .ttf files bundled
+       * into the Android build (android/app/src/main/assets/fonts). Native
+       * links them via the OS font system; the web build has no such step,
+       * so without these @font-face rules every "PlayfairDisplay_700Bold" /
+       * "Inter_*" style silently falls back to the browser default and every
+       * screen looks inconsistent.
+       */
+      @font-face {
+        font-family: "Inter_400Regular";
+        src: url("/fonts/Inter_400Regular.ttf") format("truetype");
+        font-display: swap;
+      }
+      @font-face {
+        font-family: "Inter_500Medium";
+        src: url("/fonts/Inter_500Medium.ttf") format("truetype");
+        font-display: swap;
+      }
+      @font-face {
+        font-family: "Inter_600SemiBold";
+        src: url("/fonts/Inter_600SemiBold.ttf") format("truetype");
+        font-display: swap;
+      }
+      @font-face {
+        font-family: "PlayfairDisplay_700Bold";
+        src: url("/fonts/PlayfairDisplay_700Bold.ttf") format("truetype");
+        font-display: swap;
+      }
+      @font-face {
+        font-family: "CormorantGaramond_400Regular";
+        src: url("/fonts/CormorantGaramond_400Regular.ttf") format("truetype");
+        font-display: swap;
+      }
+      @font-face {
+        font-family: "CormorantGaramond_600SemiBold";
+        src: url("/fonts/CormorantGaramond_600SemiBold.ttf") format("truetype");
+        font-display: swap;
+      }
+      @font-face {
+        font-family: "CormorantGaramond_700Bold";
+        src: url("/fonts/CormorantGaramond_700Bold.ttf") format("truetype");
+        font-display: swap;
+      }
+
       html,
       body {
         height: 100%;
