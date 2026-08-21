@@ -607,7 +607,7 @@ const styles = StyleSheet.create({
   resultHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   offlineTag: {
     fontFamily: 'Inter_400Regular',
-    fontSize: 9,
+    fontSize: 11,
     letterSpacing: 1.5,
     textTransform: 'uppercase',
   },
@@ -636,7 +636,7 @@ const styles = StyleSheet.create({
   itemName: { fontFamily: 'Inter_500Medium', fontSize: 12 },
   itemCategory: {
     fontFamily: 'Inter_400Regular',
-    fontSize: 9,
+    fontSize: 11,
     letterSpacing: 1,
     textTransform: 'uppercase',
   },

@@ -87,3 +87,32 @@ export async function pickImage(source: PickSource): Promise<PickedImage | null>
     type: asset.type ?? 'image/jpeg',
   };
 }
+
+export async function pickImages(source: PickSource): Promise<PickedImage[]> {
+  if (!(await ensureAndroidPermission(source))) return [];
+
+  const options = {
+    mediaType: 'photo' as const,
+    maxWidth: 2000,
+    maxHeight: 2000,
+    quality: 0.9 as const,
+    selectionLimit: 0,
+    saveToPhotos: false,
+  };
+
+  const result =
+    source === 'camera'
+      ? await launchCamera({ ...options, cameraType: 'back' })
+      : await launchImageLibrary(options);
+
+  if (result.didCancel || result.errorCode) return [];
+  if (!result.assets?.length) return [];
+
+  return result.assets
+    .filter(a => !!a.uri)
+    .map(asset => ({
+      uri: asset.uri!,
+      name: asset.fileName ?? `photo-${Date.now()}-${Math.random().toString(36).substring(2, 6)}.jpg`,
+      type: asset.type ?? 'image/jpeg',
+    }));
+}

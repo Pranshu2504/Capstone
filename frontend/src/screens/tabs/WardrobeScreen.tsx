@@ -8,6 +8,7 @@ import {
   Platform,
   Modal,
   TextInput,
+  Image,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -15,8 +16,9 @@ import { useTheme } from '@/context/ThemeContext';
 import Feather from 'react-native-vector-icons/Feather';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 import { useColors } from '@/hooks/useColors';
-import { pickImage, type PickSource } from '@/utils/pickImage';
-import { useUploadGarments } from '@/api/hooks';
+import { pickImage, pickImages, type PickSource } from '@/utils/pickImage';
+import { useOutfits, useUploadGarments, useWardrobe } from '@/api/hooks';
+import type { ApiWardrobeItem } from '@/api/types';
 
 // Design elements that should stay "woody" or specific to the closet vibe
 const getWoodTone = (theme: 'light' | 'dark') => ({
@@ -27,46 +29,32 @@ const getWoodTone = (theme: 'light' | 'dark') => ({
 });
 
 // ─── Static Data ─────────────────────────────────────────────────────────────
-const FILTER_PILLS = ['all', 'casual', 'formal', 'neutral', 'indian', 'unused', 'seasonal'];
+const FILTER_PILLS = ['all', 'office', 'casual', 'events', 'date', 'indian', 'unused'];
 
-const TOPS = [
-  { id: 't1', name: 'sage shirt',   bg: '#1E2A1E', stroke: '#3A5A3A', wears: 12, cat: 'casual' },
-  { id: 't2', name: 'navy tee',     bg: '#1A1A2E', stroke: '#2A2A5A', wears: 8,  cat: 'casual' },
-  { id: 't3', name: 'white oxford', bg: '#1E1E1E', stroke: '#3A3A3A', wears: 5,  cat: 'formal' },
-  { id: 't4', name: 'rust blouse',  bg: '#221818', stroke: '#5A3030', wears: 1,  cat: 'casual' },
-  { id: 't5', name: 'olive tee',    bg: '#1E2218', stroke: '#3A4A2A', wears: 6,  cat: 'casual' },
-];
+/** Stroke colour for the icon shown before a piece has a photo. */
+const STROKE_FALLBACK = '#3A3A3A';
 
-const DRESSES = [
-  { id: 'd1', name: 'mauve midi',    bg: '#1E1428', stroke: '#3A2A5A', wears: 4, cat: 'casual', isDress: true },
-  { id: 'd2', name: 'maroon kurta',  bg: '#1A0E0E', stroke: '#4A1A1A', wears: 2, cat: 'indian', isDress: true },
-  { id: 'd3', name: 'gold anarkali', bg: '#1E1E14', stroke: '#3A3A2A', wears: 0, cat: 'indian', isDress: true },
-  { id: 'd4', name: 'teal sundress', bg: '#141E1E', stroke: '#2A4A4A', wears: 3, cat: 'casual', isDress: true },
-];
-
-const BOTTOMS = [
-  { id: 'b1', name: 'navy trousers', bg: '#1A2030', wears: 9  },
-  { id: 'b2', name: 'dark denim',    bg: '#181820', wears: 14 },
-  { id: 'b3', name: 'olive cargos',  bg: '#1E2218', wears: 5  },
-  { id: 'b4', name: 'khaki trousers',bg: '#221E14', wears: 0  },
-  { id: 'b5', name: 'sweatpants',    bg: '#1A1414', wears: 3  },
-];
+/**
+ * Adapts a stored wardrobe item to the props the rail components take. The
+ * swatch stands in as the card background so a photo that is still loading —
+ * or an item added before uploads existed — still reads as the right colour.
+ */
+function toRailItem(item: ApiWardrobeItem) {
+  return {
+    id: item.id,
+    name: item.name,
+    bg: item.color,
+    stroke: STROKE_FALLBACK,
+    wears: item.timesWorn,
+    cat: item.colorName,
+    image: item.image,
+  };
+}
 
 
-const OUTFITS = [
-  {
-    id: 'o1', name: 'monday ease', wears: '3×', occasion: 'casual',
-    pieces: ['#1A2030', '#1E2218', '#1E1E1E', '#141414'],
-  },
-  {
-    id: 'o2', name: 'office sharp', wears: '5×', occasion: 'office',
-    pieces: ['#1E1E1E', '#1A2030', '#141414', '#1A1208'],
-  },
-  {
-    id: 'o3', name: 'brunch date', wears: '2×', occasion: 'brunch',
-    pieces: ['#1E1428', '#221E14', '#1E1A10', '#1A0E0E'],
-  },
-];
+
+
+
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
@@ -86,9 +74,9 @@ function SectionHeader({ title, count, onSeeAll }: { title: string; count: numbe
 const sh = StyleSheet.create({
   row:    { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 4, paddingTop: 22, paddingBottom: 10 },
   accent: { width: 2, height: 12, marginRight: 6 },
-  title:  { fontFamily: 'Inter_500Medium', fontSize: 11, letterSpacing: 0.55, flex: 1 },
-  count:  { fontFamily: 'Inter_400Regular', fontSize: 9, color: '#999999', marginRight: 8 },
-  seeAll: { fontFamily: 'Inter_400Regular', fontSize: 9 },
+  title:  { fontFamily: 'Inter_500Medium', fontSize: 13, letterSpacing: 0.55, flex: 1 },
+  count:  { fontFamily: 'Inter_400Regular', fontSize: 12, color: '#999999', marginRight: 8 },
+  seeAll: { fontFamily: 'Inter_400Regular', fontSize: 12 },
 });
 
 function RailCard({ children, showRod = true }: { children: React.ReactNode; showRod?: boolean }) {
@@ -121,8 +109,8 @@ const rc = StyleSheet.create({
 });
 
 function HangerItem({
-  name, bg, stroke, wears, cat, isDress, onPress,
-}: { name: string; bg: string; stroke: string; wears: number; cat: string; isDress?: boolean; onPress?: () => void }) {
+  name, bg, stroke, wears, cat, isDress, image, onPress,
+}: { name: string; bg: string; stroke: string; wears: number; cat: string; isDress?: boolean; image?: string | null; onPress?: () => void }) {
   const colors = useColors();
   const { theme } = useTheme();
   const woods = getWoodTone(theme as any);
@@ -133,7 +121,11 @@ function HangerItem({
       <View style={[hng.hook, { backgroundColor: woods.bracketBorder }]} />
       <View style={[hng.bar, { backgroundColor: woods.rod }]} />
       <View style={[hng.card, { backgroundColor: bg }, lowWear && { borderColor: colors.destructive }]}>
-        <Feather name={isDress ? 'user' : 'shopping-bag'} size={20} color={stroke} />
+        {image ? (
+          <Image source={{ uri: image }} style={hng.photo} resizeMode="cover" />
+        ) : (
+          <Feather name={isDress ? 'user' : 'shopping-bag'} size={22} color={stroke} />
+        )}
         <View style={[hng.badge, lowWear && { backgroundColor: theme === 'dark' ? '#2A1010' : colors.destructive + '22' }]}>
           <Text style={[hng.badgeText, { color: colors.primary }, lowWear && { color: colors.destructive }]}>{wears}×</Text>
         </View>
@@ -144,15 +136,16 @@ function HangerItem({
   );
 }
 const hng = StyleSheet.create({
-  wrapper:       { width: 82, alignItems: 'center' },
+  wrapper:       { width: 94, alignItems: 'center' },
   hook:          { width: 2, height: 10, backgroundColor: 'rgba(201,168,76,0.33)' },
-  bar:           { width: 56, height: 2, backgroundColor: '#3A2A10', marginBottom: 5 },
-  card:          { width: 76, height: 92, borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 0.5, borderColor: 'transparent', overflow: 'hidden' },
+  bar:           { width: 64, height: 2, backgroundColor: '#3A2A10', marginBottom: 5 },
+  photo:         { ...StyleSheet.absoluteFillObject, width: '100%', height: '100%' },
+  card:          { width: 88, height: 106, borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 0.5, borderColor: 'transparent', overflow: 'hidden' },
   cardWarn:      { borderColor: '#3A1A1A' },
   badge:         { position: 'absolute', top: 5, right: 5, backgroundColor: 'rgba(10,10,10,0.6)', borderRadius: 5, paddingHorizontal: 4, paddingVertical: 1 },
-  badgeText:     { fontSize: 7, fontFamily: 'Inter_400Regular' },
-  name:          { fontFamily: 'Inter_400Regular', fontSize: 8, color: '#BBBBBB', marginTop: 5, maxWidth: 80, textAlign: 'center' },
-  cat:           { fontFamily: 'Inter_400Regular', fontSize: 7, color: '#BBBBBB', marginTop: 1 },
+  badgeText:     { fontSize: 11, fontFamily: 'Inter_400Regular' },
+  name:          { fontFamily: 'Inter_400Regular', fontSize: 11, color: '#BBBBBB', marginTop: 5, maxWidth: 80, textAlign: 'center' },
+  cat:           { fontFamily: 'Inter_400Regular', fontSize: 11, color: '#BBBBBB', marginTop: 1 },
 });
 
 function ShelfCard({ children }: { children: React.ReactNode }) {
@@ -175,18 +168,22 @@ const sc = StyleSheet.create({
   scroll:{ gap: 8, alignItems: 'flex-start' },
 });
 
-function FoldedItem({ name, bg, wears, onPress }: { name: string; bg: string; wears: number; onPress?: () => void }) {
+function FoldedItem({ name, bg, wears, image, onPress }: { name: string; bg: string; wears: number; image?: string | null; onPress?: () => void }) {
   const colors = useColors();
   const lowWear = wears === 0;
   return (
     <TouchableOpacity style={fi.wrapper} onPress={onPress} activeOpacity={0.85}>
       <View style={[fi.fold, { backgroundColor: bg }]}>
-        {/* Fold lines — evenly spaced horizontal bands suggest stacked fabric */}
-        <View style={fi.linesArea}>
-          <View style={[fi.line, { opacity: 0.35 }]} />
-          <View style={[fi.line, { opacity: 0.22 }]} />
-          <View style={[fi.line, { opacity: 0.13 }]} />
-        </View>
+        {image ? (
+          <Image source={{ uri: image }} style={fi.photo} resizeMode="cover" />
+        ) : (
+          /* Fold lines — evenly spaced horizontal bands suggest stacked fabric */
+          <View style={fi.linesArea}>
+            <View style={[fi.line, { opacity: 0.35 }]} />
+            <View style={[fi.line, { opacity: 0.22 }]} />
+            <View style={[fi.line, { opacity: 0.13 }]} />
+          </View>
+        )}
         {/* Count badge */}
         <View style={[fi.badge, lowWear && { backgroundColor: '#2A1010' }]}>
           <Text style={[fi.badgeText, { color: colors.primary }, lowWear && { color: colors.destructive }]}>{wears}×</Text>
@@ -197,13 +194,36 @@ function FoldedItem({ name, bg, wears, onPress }: { name: string; bg: string; we
   );
 }
 const fi = StyleSheet.create({
-  wrapper:   { width: 82, alignItems: 'center' },
-  fold:      { width: 82, height: 74, borderRadius: 10, overflow: 'hidden', justifyContent: 'center' },
+  wrapper:   { width: 94, alignItems: 'center' },
+  photo:     { ...StyleSheet.absoluteFillObject, width: '100%', height: '100%' },
+  fold:      { width: 94, height: 86, borderRadius: 10, overflow: 'hidden', justifyContent: 'center' },
   linesArea: { paddingHorizontal: 10, gap: 7 },
   line:      { height: 2, backgroundColor: 'rgba(255,255,255,0.9)', borderRadius: 1 },
   badge:     { position: 'absolute', bottom: 6, right: 7, backgroundColor: 'rgba(10,10,10,0.55)', borderRadius: 5, paddingHorizontal: 5, paddingVertical: 1 },
-  badgeText: { fontSize: 8, fontFamily: 'Inter_400Regular' },
-  name:      { fontFamily: 'Inter_400Regular', fontSize: 8, color: '#BBBBBB', marginTop: 6, maxWidth: 80, textAlign: 'center' },
+  badgeText: { fontSize: 11, fontFamily: 'Inter_400Regular' },
+  name:      { fontFamily: 'Inter_400Regular', fontSize: 11, color: '#BBBBBB', marginTop: 6, maxWidth: 80, textAlign: 'center' },
+});
+
+/** Stands in for a rail with nothing on it — honest about the gap. */
+function EmptyRail({ label }: { label: string }) {
+  const colors = useColors();
+  return (
+    <View style={[er.card, { borderColor: colors.border, backgroundColor: colors.surfaceDim }]}>
+      <Feather name="camera" size={16} color={colors.mutedForeground} />
+      <Text style={[er.text, { color: colors.mutedForeground }]}>{label}</Text>
+    </View>
+  );
+}
+const er = StyleSheet.create({
+  card: {
+    borderRadius: 14,
+    borderWidth: 0.5,
+    borderStyle: 'dashed',
+    paddingVertical: 26,
+    alignItems: 'center',
+    gap: 8,
+  },
+  text: { fontFamily: 'Inter_400Regular', fontSize: 12, letterSpacing: 0.3 },
 });
 
 function RackCard({ children }: { children: React.ReactNode }) {
@@ -224,7 +244,9 @@ const rak = StyleSheet.create({
 });
 
 
-function OutfitCard({ name, wears, occasion, pieces }: typeof OUTFITS[0]) {
+function OutfitCard({
+  name, wears, occasion, pieces,
+}: { name: string; wears: string; occasion: string; pieces: string[] }) {
   const colors = useColors();
   return (
     <View style={[oc.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -245,9 +267,9 @@ const oc = StyleSheet.create({
   card:     { width: 108, borderRadius: 12, borderWidth: 0.5, overflow: 'hidden' },
   mosaic:   { flexDirection: 'row', flexWrap: 'wrap', gap: 2, padding: 6, height: 86 },
   piece:    { width: '47%', flex: 1, minHeight: 36, borderRadius: 4, alignItems: 'center', justifyContent: 'center' },
-  name:     { fontFamily: 'Inter_500Medium', fontSize: 10, paddingHorizontal: 8, paddingTop: 6 },
-  wears:    { fontFamily: 'Inter_400Regular', fontSize: 8, paddingHorizontal: 8, paddingTop: 2 },
-  occasion: { fontFamily: 'Inter_400Regular', fontSize: 8, paddingHorizontal: 8, paddingBottom: 8, paddingTop: 1 },
+  name:     { fontFamily: 'Inter_500Medium', fontSize: 12, paddingHorizontal: 8, paddingTop: 6 },
+  wears:    { fontFamily: 'Inter_400Regular', fontSize: 11, paddingHorizontal: 8, paddingTop: 2 },
+  occasion: { fontFamily: 'Inter_400Regular', fontSize: 11, paddingHorizontal: 8, paddingBottom: 8, paddingTop: 1 },
 });
 
 // ─── Main Screen ─────────────────────────────────────────────────────────────
@@ -260,6 +282,27 @@ export default function WardrobeScreen() {
   const [importLink, setImportLink] = useState('');
   const [uploadNote, setUploadNote] = useState<string | null>(null);
   const uploadGarments = useUploadGarments();
+  const { data: wardrobe } = useWardrobe();
+  const { data: outfits } = useOutfits();
+
+  const inCategory = (...names: string[]) =>
+    wardrobe.filter((i) => names.includes(i.category.toLowerCase()));
+
+  const tops = inCategory('tops');
+  const dresses = inCategory('dresses');
+  const bottoms = inCategory('bottoms');
+  const outerwear = inCategory('outerwear');
+  const everythingElse = wardrobe.filter(
+    (i) => !['tops', 'dresses', 'bottoms', 'outerwear'].includes(i.category.toLowerCase()),
+  );
+
+  const openItem = (item: ApiWardrobeItem, displayType: 'hanger' | 'folded') =>
+    navigation.navigate('ClothingCategory', {
+      title: item.name,
+      item: toRailItem(item),
+      count: item.timesWorn,
+      displayType,
+    });
 
   const topPad = Platform.OS === 'web' ? 44 : insets.top;
 
@@ -271,14 +314,18 @@ export default function WardrobeScreen() {
   const captureGarment = async (source: PickSource) => {
     ReactNativeHapticFeedback.trigger('impactLight');
 
-    const garment = await pickImage(source);
-    if (!garment) return; // Cancelled, or permission denied.
+    const garments = source === 'gallery' ? await pickImages('gallery') : await (async () => {
+      const g = await pickImage('camera');
+      return g ? [g] : [];
+    })();
+
+    if (!garments.length) return; // Cancelled, or permission denied.
 
     setUploadNote(null);
     try {
-      const [item] = await uploadGarments.mutateAsync([garment]);
+      const items = await uploadGarments.mutateAsync(garments);
       ReactNativeHapticFeedback.trigger('notificationSuccess');
-      setUploadNote(`added "${item.name}" to your wardrobe`);
+      setUploadNote(`added ${items.length} ${items.length === 1 ? 'item' : 'items'} to your wardrobe`);
     } catch (err) {
       ReactNativeHapticFeedback.trigger('notificationError');
       setUploadNote(err instanceof Error ? err.message : 'upload failed');
@@ -397,68 +444,102 @@ export default function WardrobeScreen() {
           <Text style={[s.uploadNote, { color: colors.primary }]}>{uploadNote}</Text>
         )}
 
-        {/* Section 1: Tops */}
-        <SectionHeader title="Tops" count={TOPS.length} />
-        <RailCard>
-          {TOPS.map((item) => (
-            <HangerItem
-              key={item.id}
-              {...item}
-              onPress={() => navigation.navigate('ClothingCategory', {
-                title: item.name,
-                item,
-                count: item.wears,
-                displayType: 'hanger',
-              })}
-            />
-          ))}
-        </RailCard>
-
-        {/* Section 2: Dresses & Ethnic */}
-        <SectionHeader title="Dresses & Ethnic" count={DRESSES.length} />
-        <RailCard>
-          {DRESSES.map((item) => (
-            <HangerItem
-              key={item.id}
-              {...item}
-              onPress={() => navigation.navigate('ClothingCategory', {
-                title: item.name,
-                item,
-                count: item.wears,
-                displayType: 'hanger',
-              })}
-            />
-          ))}
-        </RailCard>
-
-        {/* Section 3: Bottoms */}
-        <SectionHeader title="Bottoms" count={BOTTOMS.length} />
-        <ShelfCard>
-          {BOTTOMS.map((item) => (
-            <FoldedItem
-              key={item.id}
-              {...item}
-              onPress={() => navigation.navigate('ClothingCategory', {
-                title: item.name,
-                item,
-                count: item.wears,
-                displayType: 'folded',
-              })}
-            />
-          ))}
-        </ShelfCard>
-
-
-        {/* Section 6: Saved Outfits */}
-        <SectionHeader title="Saved Outfits" count={OUTFITS.length} />
-        <View style={s.outfitCard}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.outfitScroll}>
-            {OUTFITS.map((o) => (
-              <OutfitCard key={o.id} {...o} />
+        {/* Rails are driven by what you have actually uploaded. An empty
+            section says so rather than showing invented clothes. */}
+        <SectionHeader title="Tops" count={tops.length} />
+        {tops.length ? (
+          <RailCard>
+            {tops.map((item) => (
+              <HangerItem
+                key={item.id}
+                {...toRailItem(item)}
+                onPress={() => openItem(item, 'hanger')}
+              />
             ))}
-          </ScrollView>
-        </View>
+          </RailCard>
+        ) : (
+          <EmptyRail label="no tops yet" />
+        )}
 
+        <SectionHeader title="Dresses & Ethnic" count={dresses.length} />
+        {dresses.length ? (
+          <RailCard>
+            {dresses.map((item) => (
+              <HangerItem
+                key={item.id}
+                {...toRailItem(item)}
+                isDress
+                onPress={() => openItem(item, 'hanger')}
+              />
+            ))}
+          </RailCard>
+        ) : (
+          <EmptyRail label="no dresses yet" />
+        )}
+
+        <SectionHeader title="Bottoms" count={bottoms.length} />
+        {bottoms.length ? (
+          <ShelfCard>
+            {bottoms.map((item) => (
+              <FoldedItem
+                key={item.id}
+                {...toRailItem(item)}
+                onPress={() => openItem(item, 'folded')}
+              />
+            ))}
+          </ShelfCard>
+        ) : (
+          <EmptyRail label="no bottoms yet" />
+        )}
+
+        {!!outerwear.length && (
+          <>
+            <SectionHeader title="Outerwear" count={outerwear.length} />
+            <RailCard>
+              {outerwear.map((item) => (
+                <HangerItem
+                  key={item.id}
+                  {...toRailItem(item)}
+                  onPress={() => openItem(item, 'hanger')}
+                />
+              ))}
+            </RailCard>
+          </>
+        )}
+
+        {!!everythingElse.length && (
+          <>
+            <SectionHeader title="Shoes & Accessories" count={everythingElse.length} />
+            <ShelfCard>
+              {everythingElse.map((item) => (
+                <FoldedItem
+                  key={item.id}
+                  {...toRailItem(item)}
+                  onPress={() => openItem(item, 'folded')}
+                />
+              ))}
+            </ShelfCard>
+          </>
+        )}
+
+        <SectionHeader title="Saved Outfits" count={outfits.length} />
+        {outfits.length ? (
+          <View style={s.outfitCard}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.outfitScroll}>
+              {outfits.map((o) => (
+                <OutfitCard
+                  key={o.id}
+                  name={o.headline}
+                  wears={o.occasion ?? 'saved'}
+                  occasion={o.date}
+                  pieces={o.itemDetails.slice(0, 4).map((i) => i.color)}
+                />
+              ))}
+            </ScrollView>
+          </View>
+        ) : (
+          <EmptyRail label="ZORA has not styled you yet" />
+        )}
 
       </ScrollView>
 
@@ -505,7 +586,7 @@ export default function WardrobeScreen() {
 const s = StyleSheet.create({
   uploadNote: {
     fontFamily: 'Inter_400Regular',
-    fontSize: 11,
+    fontSize: 13,
     letterSpacing: 0.3,
     paddingHorizontal: 4,
     paddingTop: 8,
@@ -514,16 +595,16 @@ const s = StyleSheet.create({
 
   // Header bar
   headerBar:    { height: 36, backgroundColor: '#1A1208', borderBottomWidth: 2, borderBottomColor: '#2A1E0A', flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14 },
-  headerTitle:  { fontFamily: 'Inter_400Regular', fontSize: 9, color: '#C9A84C', letterSpacing: 1.5, flex: 1 },
+  headerTitle:  { fontFamily: 'Inter_400Regular', fontSize: 12, color: '#C9A84C', letterSpacing: 1.5, flex: 1 },
   headerIcons:  { flexDirection: 'row', gap: 6 },
   iconBtn:      { width: 24, height: 24, borderRadius: 12, backgroundColor: '#1F1208', borderWidth: 0.5, borderColor: 'rgba(201,168,76,0.2)', alignItems: 'center', justifyContent: 'center' },
 
   // Health strip
   healthStrip:  { borderBottomWidth: 1, paddingHorizontal: 16, paddingVertical: 14, flexDirection: 'row', alignItems: 'center', gap: 8 },
-  healthLabel:  { fontFamily: 'Inter_500Medium', fontSize: 13 },
+  healthLabel:  { fontFamily: 'Inter_500Medium', fontSize: 14 },
   trackOuter:   { flex: 1, height: 5, borderRadius: 3, overflow: 'hidden' },
   trackFill:    { height: '100%', borderRadius: 3 },
-  healthPct:    { fontFamily: 'Inter_500Medium', fontSize: 13 },
+  healthPct:    { fontFamily: 'Inter_500Medium', fontSize: 14 },
 
   // Filter pills
   filterBar:    { height: 52, borderBottomWidth: 1 },
@@ -531,7 +612,7 @@ const s = StyleSheet.create({
   pill:         { borderRadius: 20, paddingHorizontal: 14, paddingVertical: 7 },
   pillActive:   { },
   pillInactive: { borderWidth: 0.5 },
-  pillText:     { fontFamily: 'Inter_500Medium', fontSize: 11 },
+  pillText:     { fontFamily: 'Inter_500Medium', fontSize: 13 },
   pillTextActive:   { color: '#0A0A0A' },
   pillTextInactive: { },
 
@@ -543,7 +624,7 @@ const s = StyleSheet.create({
   accessGrid:         { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   accessCell:         { width: '22%', flex: 1, aspectRatio: 1, backgroundColor: '#161616', borderRadius: 10, borderWidth: 0.5, borderColor: '#1E1608', alignItems: 'center', justifyContent: 'center', gap: 3 },
   accessCellFeatured: { backgroundColor: '#1A1208', borderColor: 'rgba(201,168,76,0.27)' },
-  accessLabel:        { fontFamily: 'Inter_400Regular', fontSize: 7, color: '#999999', textAlign: 'center' },
+  accessLabel:        { fontFamily: 'Inter_400Regular', fontSize: 11, color: '#999999', textAlign: 'center' },
   accessLabelFeatured:{ color: '#C9A84C' },
 
   // Outfits
@@ -556,29 +637,29 @@ const s = StyleSheet.create({
   detailHeader: { flexDirection: 'row', gap: 14, marginBottom: 16 },
   detailThumb:  { width: 56, height: 64, borderRadius: 10, borderWidth: 0.5, alignItems: 'center', justifyContent: 'center' },
   detailInfo:   { flex: 1, gap: 4 },
-  detailName:   { fontFamily: 'PlayfairDisplay_700Bold', fontSize: 14, color: '#F0ECE4' },
+  detailName:   { fontFamily: 'PlayfairDisplay_700Bold', fontSize: 15, color: '#F0ECE4' },
   tagsRow:      { flexDirection: 'row', flexWrap: 'wrap', gap: 4 },
   tagGold:      { backgroundColor: '#1F1A0D', borderWidth: 0.5, borderColor: 'rgba(201,168,76,0.27)', borderRadius: 10, paddingHorizontal: 6, paddingVertical: 2 },
-  tagGoldText:  { fontFamily: 'Inter_400Regular', fontSize: 8, color: '#C9A84C' },
+  tagGoldText:  { fontFamily: 'Inter_400Regular', fontSize: 11, color: '#C9A84C' },
   tag:          { backgroundColor: '#1E1608', borderWidth: 0.5, borderColor: '#222222', borderRadius: 10, paddingHorizontal: 6, paddingVertical: 2 },
-  tagText:      { fontFamily: 'Inter_400Regular', fontSize: 8, color: '#BBBBBB' },
-  wearsLabel:   { fontFamily: 'Inter_400Regular', fontSize: 9, color: '#999999', marginTop: 2 },
+  tagText:      { fontFamily: 'Inter_400Regular', fontSize: 11, color: '#BBBBBB' },
+  wearsLabel:   { fontFamily: 'Inter_400Regular', fontSize: 12, color: '#999999', marginTop: 2 },
   dotsRow:      { flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 2 },
   dot:          { width: 7, height: 7, borderRadius: 3.5 },
   actionRow:    { flexDirection: 'row', gap: 6 },
   btnTryOn:     { flex: 1, borderRadius: 9, paddingVertical: 8, alignItems: 'center' },
-  btnTryOnText: { fontFamily: 'Inter_500Medium', fontSize: 10, color: '#0A0A0A' },
+  btnTryOnText: { fontFamily: 'Inter_500Medium', fontSize: 12, color: '#0A0A0A' },
   btnPair:      { flex: 1, borderWidth: 0.5, borderRadius: 9, paddingVertical: 8, alignItems: 'center' },
-  btnPairText:  { fontFamily: 'Inter_500Medium', fontSize: 10 },
+  btnPairText:  { fontFamily: 'Inter_500Medium', fontSize: 12 },
   btnRemove:    { flex: 1, borderWidth: 0.5, borderRadius: 9, paddingVertical: 8, alignItems: 'center' },
-  btnRemoveText:{ fontFamily: 'Inter_500Medium', fontSize: 10 },
+  btnRemoveText:{ fontFamily: 'Inter_500Medium', fontSize: 12 },
 
   // Add strip
   addStrip:           { flexDirection: 'row', gap: 8, marginTop: 12 },
   addCardPrimary:     { flex: 1, borderRadius: 12, paddingVertical: 10, paddingHorizontal: 6, alignItems: 'center', gap: 4 },
-  addCardPrimaryText: { fontFamily: 'Inter_500Medium', fontSize: 9 },
+  addCardPrimaryText: { fontFamily: 'Inter_500Medium', fontSize: 12 },
   addCardSecondary:   { flex: 1, borderWidth: 0.5, borderRadius: 12, paddingVertical: 10, paddingHorizontal: 6, alignItems: 'center', gap: 4 },
-  addCardSecondaryText:{ fontFamily: 'Inter_400Regular', fontSize: 9 },
+  addCardSecondaryText:{ fontFamily: 'Inter_400Regular', fontSize: 12 },
   
   // Modals
   modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)' },
@@ -592,8 +673,8 @@ const s = StyleSheet.create({
     padding: 24,
     paddingBottom: Platform.OS === 'web' ? 24 : 44,
   },
-  importModalTitle: { fontFamily: 'PlayfairDisplay_700Bold', fontSize: 20, marginBottom: 6 },
-  importModalSub: { fontFamily: 'Inter_400Regular', fontSize: 11, marginBottom: 20, lineHeight: 16 },
+  importModalTitle: { fontFamily: 'PlayfairDisplay_700Bold', fontSize: 22, marginBottom: 6 },
+  importModalSub: { fontFamily: 'Inter_400Regular', fontSize: 13, marginBottom: 20, lineHeight: 16 },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -606,7 +687,7 @@ const s = StyleSheet.create({
   linkInput: {
     flex: 1,
     fontFamily: 'Inter_400Regular',
-    fontSize: 14,
+    fontSize: 15,
   },
   importSubmitBtn: {
     borderRadius: 12,
@@ -616,7 +697,7 @@ const s = StyleSheet.create({
   },
   importSubmitText: {
     fontFamily: 'Inter_500Medium',
-    fontSize: 13,
+    fontSize: 14,
     letterSpacing: 0.5,
   },
 });

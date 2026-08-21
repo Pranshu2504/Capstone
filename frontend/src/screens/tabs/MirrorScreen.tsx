@@ -522,7 +522,7 @@ const styles = StyleSheet.create({
   },
   cardHandle: {
     fontFamily: "Inter_400Regular",
-    fontSize: 9,
+    fontSize: 11,
     color: "#A3A3A3",
   },
   cardActions: {
@@ -541,7 +541,7 @@ const styles = StyleSheet.create({
   },
   saveBtnText: {
     fontFamily: "Inter_400Regular",
-    fontSize: 9,
+    fontSize: 11,
     color: "#C9A84C",
   },
   tryBtn: {
@@ -555,7 +555,7 @@ const styles = StyleSheet.create({
   },
   tryBtnText: {
     fontFamily: "Inter_400Regular",
-    fontSize: 9,
+    fontSize: 11,
     color: "#BBB",
   },
   similarBadge: {
@@ -569,7 +569,7 @@ const styles = StyleSheet.create({
   },
   similarText: {
     fontFamily: "Inter_500Medium",
-    fontSize: 8,
+    fontSize: 11,
     color: "#C9A84C",
     letterSpacing: 0.5,
   },
@@ -601,7 +601,7 @@ const styles = StyleSheet.create({
   },
   liveText: {
     fontFamily: "Inter_400Regular",
-    fontSize: 9,
+    fontSize: 11,
     color: "#C9A84C",
   },
   trendRow: {
@@ -902,7 +902,7 @@ const styles = StyleSheet.create({
   },
   trendBarDay: {
     fontFamily: "Inter_400Regular",
-    fontSize: 9,
+    fontSize: 11,
     color: "#A3A3A3",
   },
   trendMiniGrid: {

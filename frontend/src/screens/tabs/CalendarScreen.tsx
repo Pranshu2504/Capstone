@@ -570,7 +570,7 @@ const styles = StyleSheet.create({
   },
   dayCardAbbr: {
     fontFamily: "Inter_400Regular",
-    fontSize: 9,
+    fontSize: 11,
     color: "#A3A3A3",
   },
   dayCardSwatch: {
@@ -660,7 +660,7 @@ const styles = StyleSheet.create({
   },
   pieceLabel: {
     fontFamily: "Inter_400Regular",
-    fontSize: 9,
+    fontSize: 11,
     color: "#A3A3A3",
     textAlign: "center",
   },
@@ -697,7 +697,7 @@ const styles = StyleSheet.create({
   },
   eventTagText: {
     fontFamily: "Inter_400Regular",
-    fontSize: 9,
+    fontSize: 11,
     color: "#C9A84C",
   },
   actionGrid: {
@@ -719,7 +719,7 @@ const styles = StyleSheet.create({
   },
   actionSolidSub: {
     fontFamily: "Inter_400Regular",
-    fontSize: 9,
+    fontSize: 11,
     color: "#5A4A1A",
   },
   actionGhost: {
@@ -739,7 +739,7 @@ const styles = StyleSheet.create({
   },
   actionGhostSub: {
     fontFamily: "Inter_400Regular",
-    fontSize: 9,
+    fontSize: 11,
     color: "#A3A3A3",
   },
   shuffleCard: {
@@ -836,7 +836,7 @@ const styles = StyleSheet.create({
   },
   recapWeek: {
     fontFamily: "Inter_400Regular",
-    fontSize: 9,
+    fontSize: 11,
     color: "#A3A3A3",
   },
   overviewContainer: {
@@ -919,7 +919,7 @@ const styles = StyleSheet.create({
   },
   buildOptionSub: {
     fontFamily: "Inter_400Regular",
-    fontSize: 9,
+    fontSize: 11,
     color: "#A3A3A3",
     textAlign: "center",
   },

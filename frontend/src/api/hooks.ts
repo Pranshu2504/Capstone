@@ -152,6 +152,16 @@ export function useOutfitToday() {
   return { ...query, ...withFallback(query, FALLBACK_OUTFIT) };
 }
 
+/** Saved outfits, newest first — the Wardrobe's "saved outfits" rail. */
+export function useOutfits() {
+  const query = useQuery({
+    ...baseOptions,
+    queryKey: ['outfits', 'all'] as const,
+    queryFn: () => api.get<ApiOutfit[]>('/api/outfits'),
+  });
+  return { ...query, ...withFallback(query, [] as ApiOutfit[]) };
+}
+
 export function useCalendar() {
   const query = useQuery({
     ...baseOptions,
