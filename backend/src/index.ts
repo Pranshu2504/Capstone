@@ -6,9 +6,11 @@ import { env } from './lib/env.js';
 import { HttpError } from './lib/http.js';
 import { prisma } from './lib/prisma.js';
 import { seedDemoData } from './lib/seedData.js';
+import { authRouter } from './routes/auth.js';
 import { calendarRouter } from './routes/calendar.js';
 import { discoverRouter } from './routes/discover.js';
 import { outfitsRouter } from './routes/outfits.js';
+import { recommendRouter } from './routes/recommend.js';
 import { userRouter } from './routes/user.js';
 import { wardrobeRouter } from './routes/wardrobe.js';
 import { apiRouter as tryOnRouter } from './tryon/routes/index.js';
@@ -53,10 +55,12 @@ app.get('/', (_req, res) => {
   res.json({ name: 'zora-backend', version: 1, health: '/health', api: '/api' });
 });
 
+app.use('/api/auth', authRouter);
 app.use('/api/user', userRouter);
 app.use('/api/wardrobe', wardrobeRouter);
 app.use('/api/outfits', outfitsRouter);
 app.use('/api/calendar', calendarRouter);
+app.use('/api/recommend', recommendRouter);
 app.use('/api', discoverRouter);
 
 // Virtual try-on (FASHN). Ported from the standalone `ai/` service so a single

@@ -84,7 +84,10 @@ async function parseError(response: Response): Promise<TryOnApiError> {
  * understands its own {uri, name, type} descriptor.
  */
 async function appendImage(form: FormData, field: string, image: PickedImage): Promise<void> {
-  if (image.uri.startsWith('blob:') || image.uri.startsWith('data:')) {
+  // Anything already addressable over the network — including the signed
+  // Supabase URLs the stylist hands over — has to be fetched into a Blob;
+  // only a local file path can be passed to FormData by reference.
+  if (/^(blob:|data:|https?:)/.test(image.uri)) {
     const blob = await (await fetch(image.uri)).blob();
     (form.append as (n: string, v: unknown, f?: string) => void)(field, blob, image.name);
     return;

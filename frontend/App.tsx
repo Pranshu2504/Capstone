@@ -11,10 +11,12 @@ import Feather from 'react-native-vector-icons/Feather';
 
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { useColors } from '@/hooks/useColors';
+import { AuthProvider } from '@/context/AuthContext';
 import { ThemeProvider, useTheme } from '@/context/ThemeContext';
 
 import DoorScreen from '@/screens/DoorScreen';
 import InterviewScreen from '@/screens/InterviewScreen';
+import StylistScreen from '@/screens/StylistScreen';
 import MirrorScreen from '@/screens/tabs/MirrorScreen';
 import WardrobeScreen from '@/screens/tabs/WardrobeScreen';
 import LensScreen from '@/screens/tabs/LensScreen';
@@ -29,6 +31,7 @@ import ClothingCategoryScreen, { ClothingItem } from '@/screens/ClothingCategory
 export type RootStackParamList = {
   Door: undefined;
   Interview: undefined;
+  Stylist: undefined;
   Main: undefined;
   Identity: undefined;
   Chatbot: undefined;
@@ -195,6 +198,7 @@ function AppContent() {
                 <Stack.Navigator screenOptions={{ headerShown: false }}>
                   <Stack.Screen name="Door" component={DoorScreen} />
                   <Stack.Screen name="Interview" component={InterviewScreen} />
+                  <Stack.Screen name="Stylist" component={StylistScreen} />
                   <Stack.Screen name="Main" component={TabNavigator} />
                   <Stack.Screen name="Identity" component={IdentityScreen} options={{ presentation: 'modal' }} />
                   <Stack.Screen name="Chatbot" component={ChatbotScreen} options={{ presentation: 'formSheet' }} />
@@ -214,7 +218,9 @@ function AppContent() {
 export default function App() {
   return (
     <ThemeProvider>
-      <AppContent />
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
     </ThemeProvider>
   );
 }

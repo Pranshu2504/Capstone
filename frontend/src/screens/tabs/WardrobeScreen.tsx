@@ -16,6 +16,7 @@ import Feather from 'react-native-vector-icons/Feather';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 import { useColors } from '@/hooks/useColors';
 import { pickImage, type PickSource } from '@/utils/pickImage';
+import { useUploadGarments } from '@/api/hooks';
 
 // Design elements that should stay "woody" or specific to the closet vibe
 const getWoodTone = (theme: 'light' | 'dark') => ({
@@ -257,13 +258,15 @@ export default function WardrobeScreen() {
   const [activeFilter, setActiveFilter] = useState('all');
   const [showImportModal, setShowImportModal] = useState(false);
   const [importLink, setImportLink] = useState('');
+  const [uploadNote, setUploadNote] = useState<string | null>(null);
+  const uploadGarments = useUploadGarments();
 
   const topPad = Platform.OS === 'web' ? 44 : insets.top;
 
   /**
-   * A captured garment is handed to the Lens screen, which pairs it with a
-   * photo of the wearer and runs the try-on. Permission prompts and the
-   * web/native split both live in pickImage().
+   * A captured garment is catalogued into the wardrobe: uploaded, read by the
+   * vision pass server-side, and stored as a real item the stylist can pick
+   * from later. Permission prompts and the web/native split live in pickImage().
    */
   const captureGarment = async (source: PickSource) => {
     ReactNativeHapticFeedback.trigger('impactLight');
@@ -271,8 +274,15 @@ export default function WardrobeScreen() {
     const garment = await pickImage(source);
     if (!garment) return; // Cancelled, or permission denied.
 
-    ReactNativeHapticFeedback.trigger('notificationSuccess');
-    navigation.navigate('lens', { garment });
+    setUploadNote(null);
+    try {
+      const [item] = await uploadGarments.mutateAsync([garment]);
+      ReactNativeHapticFeedback.trigger('notificationSuccess');
+      setUploadNote(`added "${item.name}" to your wardrobe`);
+    } catch (err) {
+      ReactNativeHapticFeedback.trigger('notificationError');
+      setUploadNote(err instanceof Error ? err.message : 'upload failed');
+    }
   };
 
   const handleCamera = () => captureGarment('camera');
@@ -350,9 +360,16 @@ export default function WardrobeScreen() {
 
         {/* Add to Wardrobe Strip */}
         <View style={[s.addStrip, { marginTop: 16, marginBottom: 4 }]}>
-          <TouchableOpacity style={[s.addCardPrimary, { backgroundColor: colors.primary }]} activeOpacity={0.85} onPress={handleCamera}>
+          <TouchableOpacity
+            style={[s.addCardPrimary, { backgroundColor: colors.primary, opacity: uploadGarments.isPending ? 0.6 : 1 }]}
+            activeOpacity={0.85}
+            onPress={handleCamera}
+            disabled={uploadGarments.isPending}
+          >
             <Feather name="camera" size={16} color={colors.primaryForeground} />
-            <Text style={[s.addCardPrimaryText, { color: colors.primaryForeground }]}>photograph it</Text>
+            <Text style={[s.addCardPrimaryText, { color: colors.primaryForeground }]}>
+              {uploadGarments.isPending ? 'reading…' : 'photograph it'}
+            </Text>
           </TouchableOpacity>
           <TouchableOpacity 
             style={[s.addCardSecondary, { backgroundColor: colors.card, borderColor: colors.border }]} 
@@ -365,11 +382,20 @@ export default function WardrobeScreen() {
             <Feather name="link" size={14} color={colors.primary} />
             <Text style={[s.addCardSecondaryText, { color: colors.mutedForeground }]}>import link</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[s.addCardSecondary, { backgroundColor: colors.card, borderColor: colors.border }]} activeOpacity={0.85} onPress={handleGallery}>
+          <TouchableOpacity
+            style={[s.addCardSecondary, { backgroundColor: colors.card, borderColor: colors.border, opacity: uploadGarments.isPending ? 0.6 : 1 }]}
+            activeOpacity={0.85}
+            onPress={handleGallery}
+            disabled={uploadGarments.isPending}
+          >
             <Feather name="image" size={14} color={colors.primary} />
             <Text style={[s.addCardSecondaryText, { color: colors.mutedForeground }]}>from gallery</Text>
           </TouchableOpacity>
         </View>
+
+        {!!uploadNote && (
+          <Text style={[s.uploadNote, { color: colors.primary }]}>{uploadNote}</Text>
+        )}
 
         {/* Section 1: Tops */}
         <SectionHeader title="Tops" count={TOPS.length} />
@@ -477,6 +503,13 @@ export default function WardrobeScreen() {
 
 // ─── Styles ──────────────────────────────────────────────────────────────────
 const s = StyleSheet.create({
+  uploadNote: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 11,
+    letterSpacing: 0.3,
+    paddingHorizontal: 4,
+    paddingTop: 8,
+  },
   root: { flex: 1, backgroundColor: '#111111' },
 
   // Header bar

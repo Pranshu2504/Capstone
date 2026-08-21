@@ -11,12 +11,17 @@ export const serializeUser = (user: User) => ({
   id: user.id,
   name: user.name,
   handle: user.handle,
+  email: user.email,
   moodKeywords: user.moodKeywords,
   palette: user.palette,
   favoritesBrand: user.favoritesBrand,
 });
 
-export const serializeItem = (item: WardrobeItem) => ({
+/**
+ * `photoUrl` is minted per request from the private storage bucket, so it is
+ * passed in rather than read off the row — the row only holds the object path.
+ */
+export const serializeItem = (item: WardrobeItem, photoUrl?: string) => ({
   id: item.id,
   name: item.name,
   category: item.category,
@@ -27,8 +32,22 @@ export const serializeItem = (item: WardrobeItem) => ({
   lastWorn: item.lastWorn,
   occasions: item.occasions,
   dustOff: item.dustOff,
-  image: item.image,
+  image: photoUrl ?? item.image,
+  description: item.description,
+  styleTags: item.styleTags,
+  pattern: item.pattern,
+  seasons: item.seasons,
+  formality: item.formality,
 });
+
+/** Signs every photo in one round trip, then serializes. */
+export async function serializeItems(
+  items: WardrobeItem[],
+  sign: (paths: string[]) => Promise<Map<string, string>>,
+) {
+  const urls = await sign(items.map((i) => i.imagePath ?? '').filter(Boolean));
+  return items.map((item) => serializeItem(item, item.imagePath ? urls.get(item.imagePath) : undefined));
+}
 
 type OutfitWithItems = Outfit & {
   outfitItems: (OutfitItem & { item: WardrobeItem })[];

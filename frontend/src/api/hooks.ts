@@ -1,6 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { api } from './client';
+import { uploadGarmentPhotos } from '@/services/wardrobeUpload';
+import type { PickedImage } from '@/utils/pickImage';
 import type {
   ApiCalendar,
   ApiCategoryCount,
@@ -9,6 +11,9 @@ import type {
   ApiTrend,
   ApiUser,
   ApiWardrobeItem,
+  Recommendation,
+  StylistAnswers,
+  StylistQuestionsResponse,
 } from './types';
 import {
   MOCK_CALENDAR,
@@ -35,6 +40,7 @@ export const queryKeys = {
   trends: ['trends'] as const,
   posts: ['community', 'posts'] as const,
   vibes: ['vibes'] as const,
+  stylistQuestions: ['stylist', 'questions'] as const,
 };
 
 // Fixtures are already API-shaped apart from these two fields.
@@ -93,6 +99,18 @@ export function useUser() {
     queryFn: () => api.get<ApiUser>('/api/user/me'),
   });
   return { ...query, ...withFallback(query, FALLBACK_USER) };
+}
+
+// Saves the Interview screen's answers onto the signed-in user's profile.
+export function useUpdateProfile() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (patch: { moodKeywords?: string[]; palette?: string[]; favoritesBrand?: string }) =>
+      api.patch<ApiUser>('/api/user/me', patch),
+    onSuccess: () => {
+      client.invalidateQueries({ queryKey: queryKeys.user });
+    },
+  });
 }
 
 export function useWardrobe(filters?: { category?: string; occasion?: string }) {
@@ -229,3 +247,47 @@ export function useSavePlannedDay() {
 }
 
 type ApiPlannedDayResponse = ApiCalendar['days'][number];
+
+
+// ── Stylist ─────────────────────────────────────────────────────────────────
+
+/**
+ * The interview questions, served by the API so the wording and the scoring
+ * stay in step. No mock fallback: an unreachable API means the stylist cannot
+ * run anyway, and a half-working questionnaire would be worse than an error.
+ */
+export function useStylistQuestions() {
+  return useQuery({
+    queryKey: queryKeys.stylistQuestions,
+    queryFn: () => api.get<StylistQuestionsResponse>('/api/recommend/questions'),
+    staleTime: 1000 * 60 * 30,
+  });
+}
+
+/**
+ * Runs the interview answers through the stylist.
+ *
+ * The result is persisted server-side as today's outfit, so the Mirror hero
+ * and the calendar both pick it up — hence invalidating those queries here.
+ */
+export function useRecommendOutfit() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (answers: StylistAnswers) => api.post<Recommendation>('/api/recommend', answers),
+    onSuccess: () => {
+      client.invalidateQueries({ queryKey: queryKeys.outfitToday });
+      client.invalidateQueries({ queryKey: queryKeys.calendar });
+    },
+  });
+}
+
+/** Uploads garment photos; each becomes a catalogued wardrobe item. */
+export function useUploadGarments() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (images: PickedImage[]) => uploadGarmentPhotos(images),
+    onSuccess: () => {
+      client.invalidateQueries({ queryKey: ['wardrobe'] });
+    },
+  });
+}

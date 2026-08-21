@@ -15,6 +15,10 @@ model User {
   id             String   @id @default(cuid())
   name           String
   handle         String   @unique
+  // Nullable: the seeded demo user and any pre-auth rows have neither.
+  // Set once on first sign-in/sign-up via /api/auth/sync.
+  email          String?  @unique
+  supabaseId     String?  @unique
   moodKeywords   String[]
   palette        String[]
   favoritesBrand String?
@@ -41,6 +45,17 @@ model WardrobeItem {
   image     String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  // Set when the item came from an uploaded photo. `imagePath` is the private
+  // Supabase Storage object key — never a URL, since reads are signed per
+  // request. The rest is what the vision pass read off the photo, and is what
+  // the stylist reasons over (cheap text instead of re-sending images).
+  imagePath  String?
+  description String?
+  styleTags  String[]
+  pattern    String?
+  seasons    String[]
+  formality  Int?
 
   user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   outfitItems OutfitItem[]

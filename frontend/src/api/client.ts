@@ -1,5 +1,16 @@
 import { API_BASE_URL } from '@/config/api';
 
+// Set by AuthContext whenever the Supabase session changes. A plain module
+// closure avoids a circular import between api/client.ts and context/AuthContext.tsx.
+let authTokenGetter: () => string | null = () => null;
+export function setAuthTokenGetter(fn: () => string | null): void {
+  authTokenGetter = fn;
+}
+/** Read the current session token — for callers that build their own request. */
+export function getAuthToken(): string | null {
+  return authTokenGetter();
+}
+
 export class ApiError extends Error {
   constructor(
     public status: number,
@@ -15,6 +26,8 @@ export class ApiError extends Error {
 export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
   const url = `${API_BASE_URL}${path.startsWith('/') ? path : `/${path}`}`;
 
+  const token = getAuthToken();
+
   let response: Response;
   try {
     response = await fetch(url, {
@@ -22,6 +35,7 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
       headers: {
         Accept: 'application/json',
         ...(init.body ? { 'Content-Type': 'application/json' } : {}),
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...init.headers,
       },
     });

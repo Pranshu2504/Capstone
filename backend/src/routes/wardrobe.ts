@@ -1,11 +1,28 @@
 import { Router } from 'express';
+import multer from 'multer';
 import { z } from 'zod';
 import { getCurrentUser } from '../lib/currentUser.js';
 import { asyncHandler, HttpError, notFound } from '../lib/http.js';
 import { prisma } from '../lib/prisma.js';
-import { serializeItem } from '../lib/serializers.js';
+import { serializeItem, serializeItems } from '../lib/serializers.js';
+import {
+  deleteGarmentPhoto,
+  signGarmentPhotos,
+  uploadGarmentPhoto,
+} from '../lib/wardrobeStorage.js';
+import { analyseGarmentPhoto } from '../services/garmentVision.js';
 
 export const wardrobeRouter = Router();
+
+/** Garment photos are held in memory just long enough to forward to storage. */
+const photoUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024, files: 8 },
+  fileFilter: (_req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) return cb(null, true);
+    cb(new Error(`Expected an image, received ${file.mimetype}.`));
+  },
+});
 
 const createSchema = z.object({
   name: z.string().min(1),
@@ -34,7 +51,7 @@ wardrobeRouter.get(
     const query = listQuerySchema.safeParse(req.query);
     if (!query.success) throw new HttpError(400, 'Invalid query', query.error.flatten());
 
-    const user = await getCurrentUser();
+    const user = await getCurrentUser(req);
     const { category, occasion, dustOff } = query.data;
 
     const items = await prisma.wardrobeItem.findMany({
@@ -47,15 +64,15 @@ wardrobeRouter.get(
       orderBy: [{ category: 'asc' }, { createdAt: 'asc' }],
     });
 
-    res.json(items.map(serializeItem));
+    res.json(await serializeItems(items, signGarmentPhotos));
   }),
 );
 
 // Category counts drive the Wardrobe grid tiles.
 wardrobeRouter.get(
   '/categories',
-  asyncHandler(async (_req, res) => {
-    const user = await getCurrentUser();
+  asyncHandler(async (req, res) => {
+    const user = await getCurrentUser(req);
     const grouped = await prisma.wardrobeItem.groupBy({
       by: ['category'],
       where: { userId: user.id },
@@ -69,12 +86,13 @@ wardrobeRouter.get(
 wardrobeRouter.get(
   '/:id',
   asyncHandler(async (req, res) => {
-    const user = await getCurrentUser();
+    const user = await getCurrentUser(req);
     const item = await prisma.wardrobeItem.findFirst({
       where: { id: req.params.id, userId: user.id },
     });
     if (!item) throw notFound('Wardrobe item');
-    res.json(serializeItem(item));
+    const [serialized] = await serializeItems([item], signGarmentPhotos);
+    res.json(serialized);
   }),
 );
 
@@ -84,7 +102,7 @@ wardrobeRouter.post(
     const parsed = createSchema.safeParse(req.body);
     if (!parsed.success) throw new HttpError(400, 'Invalid body', parsed.error.flatten());
 
-    const user = await getCurrentUser();
+    const user = await getCurrentUser(req);
     const item = await prisma.wardrobeItem.create({
       data: {
         ...parsed.data,
@@ -102,7 +120,7 @@ wardrobeRouter.patch(
     const parsed = updateSchema.safeParse(req.body);
     if (!parsed.success) throw new HttpError(400, 'Invalid body', parsed.error.flatten());
 
-    const user = await getCurrentUser();
+    const user = await getCurrentUser(req);
     const existing = await prisma.wardrobeItem.findFirst({
       where: { id: req.params.id, userId: user.id },
       select: { id: true },
@@ -121,7 +139,7 @@ wardrobeRouter.patch(
 wardrobeRouter.post(
   '/:id/wear',
   asyncHandler(async (req, res) => {
-    const user = await getCurrentUser();
+    const user = await getCurrentUser(req);
     const existing = await prisma.wardrobeItem.findFirst({
       where: { id: req.params.id, userId: user.id },
       select: { id: true },
@@ -139,14 +157,72 @@ wardrobeRouter.post(
 wardrobeRouter.delete(
   '/:id',
   asyncHandler(async (req, res) => {
-    const user = await getCurrentUser();
+    const user = await getCurrentUser(req);
     const existing = await prisma.wardrobeItem.findFirst({
       where: { id: req.params.id, userId: user.id },
-      select: { id: true },
+      select: { id: true, imagePath: true },
     });
     if (!existing) throw notFound('Wardrobe item');
 
     await prisma.wardrobeItem.delete({ where: { id: existing.id } });
+    // Best-effort: a surviving object is wasted storage, not a broken response.
+    await deleteGarmentPhoto(existing.imagePath);
     res.status(204).end();
+  }),
+);
+
+/**
+ * Uploads one or more garment photos and turns each into a wardrobe item.
+ *
+ * Each photo is stored privately, then read once by the vision pass so the
+ * stylist can later reason over text alone. A photo the model cannot parse
+ * still becomes an item — just an unlabelled one the user can correct.
+ */
+wardrobeRouter.post(
+  '/upload',
+  photoUpload.array('photos', 8),
+  asyncHandler(async (req, res) => {
+    const files = (req.files as Express.Multer.File[] | undefined) ?? [];
+    if (!files.length) throw new HttpError(400, 'Attach at least one photo as "photos".');
+
+    const user = await getCurrentUser(req);
+
+    // Sequential on purpose: parallel vision calls on a batch of photos are the
+    // fastest way to trip Gemini's per-minute rate limit.
+    const created = [];
+    for (const file of files) {
+      const imagePath = await uploadGarmentPhoto({
+        userId: user.id,
+        buffer: file.buffer,
+        mimeType: file.mimetype,
+      });
+
+      const { analysis } = await analyseGarmentPhoto(
+        file.buffer.toString('base64'),
+        file.mimetype,
+      );
+
+      created.push(
+        await prisma.wardrobeItem.create({
+          data: {
+            userId: user.id,
+            imagePath,
+            name: analysis.name,
+            category: analysis.category,
+            color: analysis.color,
+            colorName: analysis.colorName,
+            fabric: analysis.fabric,
+            pattern: analysis.pattern,
+            occasions: analysis.occasions,
+            styleTags: analysis.styleTags,
+            seasons: analysis.seasons,
+            formality: analysis.formality,
+            description: analysis.description,
+          },
+        }),
+      );
+    }
+
+    res.status(201).json(await serializeItems(created, signGarmentPhotos));
   }),
 );
