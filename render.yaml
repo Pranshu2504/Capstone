@@ -25,23 +25,9 @@ services:
       - key: CORS_ORIGIN
         sync: false
 
-  - type: web
-    name: zora-ai
-    runtime: node
-    plan: free
-    region: oregon
-    rootDir: ai
-    # --include=dev for the same reason as zora-api above: NODE_ENV=production
-    # makes npm skip devDependencies, but `npm run build` is tsc, and both
-    # typescript and the @types packages live there.
-    buildCommand: npm ci --include=dev && npm run build
-    startCommand: npm start
-    healthCheckPath: /api/health
-    autoDeploy: true
-    envVars:
-      - key: NODE_ENV
-        value: production
-      # Create one at https://app.fashn.ai → Developer API → Create new API key.
+      # ── Virtual try-on (FASHN) ────────────────────────────────────────────
+      # Served by this same service, so the frontend needs only one API URL.
+      # Without FASHN_API_KEY the wardrobe API still runs; try-on reports 503.
       - key: FASHN_API_KEY
         sync: false
       - key: FASHN_DEFAULT_MODEL
@@ -50,19 +36,11 @@ services:
         value: "180000"
       - key: TRYON_POLL_INTERVAL_MS
         value: "3000"
-      - key: STORAGE_DIR
-        value: storage
       # Free instances have no persistent disk, so mirroring FASHN outputs
-      # locally loses them on every restart and deploy while looking like it
-      # worked. Off, the API returns FASHN's CDN URL — still a 3-day expiry,
-      # but honest about it. Turn on with a paid disk or object storage.
+      # locally loses them on every restart while looking like it worked.
+      # Off, the API returns FASHN's CDN URL, which expires after 3 days.
       - key: PERSIST_OUTPUTS
         value: "false"
-      # Set this to the Vercel production URL once known. Vercel *.vercel.app
-      # preview origins should be added here too, comma-separated, or leave
-      # "*" for now and tighten later.
-      - key: CORS_ORIGINS
-        sync: false
 
 databases:
   - name: zora-db

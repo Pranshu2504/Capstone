@@ -11,11 +11,15 @@ import { discoverRouter } from './routes/discover.js';
 import { outfitsRouter } from './routes/outfits.js';
 import { userRouter } from './routes/user.js';
 import { wardrobeRouter } from './routes/wardrobe.js';
+import { apiRouter as tryOnRouter } from './tryon/routes/index.js';
+import { env as tryOnEnv, isTryOnConfigured } from './tryon/config/env.js';
 
 const app = express();
 
 app.set('trust proxy', 1); // Render terminates TLS at its proxy.
-app.use(express.json({ limit: '2mb' }));
+// 50mb: try-on accepts base64 data URIs for the person and garment images.
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(morgan(env.nodeEnv === 'production' ? 'combined' : 'dev'));
 
 app.use(
@@ -52,6 +56,17 @@ app.use('/api/wardrobe', wardrobeRouter);
 app.use('/api/outfits', outfitsRouter);
 app.use('/api/calendar', calendarRouter);
 app.use('/api', discoverRouter);
+
+// Virtual try-on (FASHN). Ported from the standalone `ai/` service so a single
+// deployment serves both halves of the API. Mounted last so its catch-all
+// error handler cannot shadow the wardrobe routes.
+if (tryOnEnv.PERSIST_OUTPUTS) {
+  app.use(
+    '/static',
+    express.static(tryOnEnv.storage.root, { maxAge: '7d', index: false, dotfiles: 'ignore' }),
+  );
+}
+app.use('/api', tryOnRouter);
 
 app.use((_req, res) => {
   res.status(404).json({ error: 'Route not found' });
@@ -101,6 +116,9 @@ async function ensureSeeded(): Promise<void> {
 const server = app.listen(env.port, () => {
   console.log(`ZORA API listening on http://localhost:${env.port}`);
   console.log(`  CORS origins: ${env.corsOrigins.join(', ')}`);
+  console.log(
+    `  Try-on: ${isTryOnConfigured ? `enabled (${tryOnEnv.FASHN_DEFAULT_MODEL})` : 'disabled — set FASHN_API_KEY'}`,
+  );
   void ensureSeeded();
 });
 

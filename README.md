@@ -17,11 +17,14 @@ An AI wardrobe stylist. One React Native codebase ships to **Android** and to th
 Capstone/
 ├── frontend/     React Native app (Android) + Vite web target — deploys to Vercel
 ├── backend/      Express + Prisma + Postgres API           — deploys to Render
-└── ai/           Virtual try-on service (FASHN API)        — deploys to Render
+└── ai/           Standalone try-on service — superseded, see below
 ```
 
-Three services, and the two backends are independent: `backend/` serves wardrobe
-data, `ai/` runs try-on. They cannot share a port, so `ai/` listens on **4001**.
+`backend/` serves **both** the wardrobe API and virtual try-on, so there is one
+backend URL and the frontend needs a single `VITE_API_URL`.
+
+> `ai/` still runs standalone on port 4001 if you want try-on in its own process,
+> but its routes now live in `backend/src/tryon/` and that is what deploys.
 
 The web build reuses `frontend/src` and `frontend/App.tsx` **verbatim**. Nothing in
 the screens branches on platform for the sake of the web port: `vite.config.ts`
@@ -60,25 +63,7 @@ npm run web
 > `--legacy-peer-deps` is required: the React Native 0.81 dependency graph pins peer
 > ranges that npm's strict resolver rejects.
 
-### 3. Try-on service — http://localhost:4001
-
-```bash
-cd ai
-cp .env.example .env          # set FASHN_API_KEY and PORT=4001
-npm install
-npm run dev
-```
-
-Check it: `curl localhost:4001/api/health` → `{"status":"ok",...}`
-
-`FASHN_API_KEY` is a **paid** credential — `tryon-v1.6` costs 1 credit per image,
-`tryon-max` up to 5. Get one at [app.fashn.ai](https://app.fashn.ai) → Developer
-API. Without it the rest of the app runs fine; only try-on is unavailable.
-
-> `/api/ready` reports FASHN reachability and your remaining credit balance
-> without generating anything. Use it, not a real try-on, to check wiring.
-
-### 4. Frontend (Android) — unchanged
+### 3. Frontend (Android) — unchanged
 
 ```bash
 cd frontend
@@ -125,8 +110,17 @@ off. Each hook returns `isLive` to say whether it is showing server data.
 
 ## Virtual try-on
 
-`ai/` wraps the [FASHN API](https://docs.fashn.ai). Submit a photo of a person
-plus a garment image, poll the job, get a generated image back.
+`backend/src/tryon/` wraps the [FASHN API](https://docs.fashn.ai). Submit a photo
+of a person plus a garment image, poll the job, get a generated image back. These
+routes are served by the same process as the wardrobe API, on the same port.
+
+Set `FASHN_API_KEY` in `backend/.env` to enable it — it is a **paid** credential
+(`tryon-v1.6` costs 1 credit per image, `tryon-max` up to 5; get one at
+[app.fashn.ai](https://app.fashn.ai) → Developer API). **Without it the wardrobe
+API still runs normally** and only the try-on routes report `503`.
+
+> `/api/ready` reports FASHN reachability and your remaining credits without
+> generating anything. Use it, not a real try-on, to check wiring.
 
 | Method | Route | Purpose |
 | ------ | ----- | ------- |
@@ -156,8 +150,8 @@ photo of someone wearing it.
 
 ### Result URLs are service-relative
 
-Images come back as `/static/outputs/….png`, relative to the try-on service —
-not to the web app. The client prefixes them via `absoluteUrl()` in
+Images come back as `/static/outputs/….png`, relative to the API — not to the
+web app. The client prefixes them via `absoluteUrl()` in
 `frontend/src/services/tryOnApi.ts`. Anything else consuming this API must do
 the same, or use the `cdnUrl` field, which is absolute but **expires after 3
 days**.
@@ -190,35 +184,35 @@ overwrites real data. Set `AUTO_SEED=false` to opt out.
 Import the repo and set **Root Directory to `frontend`** — `frontend/vercel.json`
 supplies the rest (build command, output directory, SPA rewrites, asset caching).
 
-Set two environment variables:
+Set one environment variable:
 
-| Variable          | Value                                    | Points at |
-| ----------------- | ---------------------------------------- | --------- |
-| `VITE_API_URL`    | `https://<wardrobe-service>.onrender.com` | `backend/` |
-| `VITE_AI_API_URL` | `https://<tryon-service>.onrender.com`    | `ai/` |
+| Variable       | Value                              |
+| -------------- | ---------------------------------- |
+| `VITE_API_URL` | `https://<your-service>.onrender.com` |
 
-**Both are read at build time, not runtime.** Vite compiles their values
+Try-on is served by that same URL, so no second variable is needed.
+(`VITE_AI_API_URL` still overrides it if you run the two apart.)
+
+**It is read at build time, not runtime.** Vite compiles their values
 directly into the JavaScript bundle, so:
 
-- Setting a variable *after* a deploy does nothing until you **redeploy**.
-- If one is unset at build time, the local fallback in `frontend/src/config/`
-  (`http://localhost:4000` / `http://localhost:4001`) is what gets compiled in —
-  and every visitor's browser will then try to reach *their own* machine on that
-  port, which fails. The symptom looks like a CORS or server problem and is
-  neither.
+- Setting it *after* a deploy does nothing until you **redeploy**.
+- If it is unset at build time, the local fallback in `frontend/src/config/`
+  (`http://localhost:4000`) is what gets compiled in — and every visitor's
+  browser will then try to reach *their own* machine on that port, which fails.
+  The symptom looks like a CORS or server problem and is neither.
 
-Deploying the Render services and setting `FASHN_API_KEY` there does **not**
-address this. That key lets the try-on service talk to FASHN, server to server.
-It has nothing to do with how the browser locates the try-on service — that is
-`VITE_AI_API_URL` alone.
+Setting `FASHN_API_KEY` on Render does **not** address this. That key lets the
+server talk to FASHN, server to server. It has nothing to do with how the
+browser locates the API — that is `VITE_API_URL` alone.
 
 To check what a live build actually contains:
 
 ```bash
-curl -s https://<your-app>.vercel.app/assets/index-*.js | grep -o 'localhost:400[01]'
+curl -s https://<your-app>.vercel.app/assets/index-*.js | grep -o 'onrender.com'
 ```
 
-Any hit means a variable was missing at build time.
+No hit means `VITE_API_URL` was missing when the bundle was built.
 
 ---
 
