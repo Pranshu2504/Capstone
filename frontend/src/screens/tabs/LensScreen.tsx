@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   StyleSheet,
@@ -9,13 +9,18 @@ import {
   Platform,
   Modal,
   Dimensions,
+  Image,
+  ActivityIndicator,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import Feather from "react-native-vector-icons/Feather";
 import { useColors } from "@/hooks/useColors";
 import { useWardrobe } from "@/api/hooks";
 import ReactNativeHapticFeedback from "react-native-haptic-feedback";
+import { pickImage, type PickedImage, type PickSource } from "@/utils/pickImage";
+import { useTryOn } from "@/hooks/useTryOn";
+import { checkTryOnService } from "@/services/tryOnApi";
 
 const { width, height } = Dimensions.get("window");
 
@@ -25,12 +30,65 @@ export default function LensScreen() {
   const colors = useColors();
   const { data: wardrobeItems } = useWardrobe();
   const navigation = useNavigation<any>();
+  const route = useRoute<any>();
   const insets = useSafeAreaInsets();
   const [mode, setMode] = useState<Mode>("mirror");
   const [selectedOutfit, setSelectedOutfit] = useState<string[]>([]);
   const [linkUrl, setLinkUrl] = useState("");
   const [processing, setProcessing] = useState(false);
   const [showResult, setShowResult] = useState(false);
+
+  // The two images the try-on needs. The garment may arrive pre-filled from
+  // the Wardrobe screen's camera button.
+  const [person, setPerson] = useState<PickedImage | null>(null);
+  const [garment, setGarment] = useState<PickedImage | null>(null);
+  const [serviceNote, setServiceNote] = useState<string | null>(null);
+
+  const tryOn = useTryOn();
+  const resultUrl = tryOn.job?.images[0]?.url ?? null;
+
+  // Accept a garment handed over by the Wardrobe screen.
+  useEffect(() => {
+    const incoming = route.params?.garment as PickedImage | undefined;
+    if (incoming) {
+      setGarment(incoming);
+      navigation.setParams({ garment: undefined });
+    }
+  }, [route.params?.garment, navigation]);
+
+  // Surface an unreachable service up front rather than at submit time.
+  useEffect(() => {
+    let cancelled = false;
+    checkTryOnService().then(({ ready, credits, detail }) => {
+      if (cancelled) return;
+      if (!ready) setServiceNote(detail);
+      else if (credits !== null && credits <= 5) {
+        setServiceNote(`Only ${credits} FASHN credits left.`);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const choose = async (slot: "person" | "garment", source: PickSource) => {
+    ReactNativeHapticFeedback.trigger("impactLight");
+    const picked = await pickImage(source);
+    if (!picked) return;
+
+    if (slot === "person") setPerson(picked);
+    else setGarment(picked);
+    tryOn.reset();
+  };
+
+  const runTryOn = () => {
+    if (!person || !garment || tryOn.isBusy) return;
+    ReactNativeHapticFeedback.trigger("impactMedium");
+    // performance mode keeps the mirror responsive at 1 credit per attempt.
+    tryOn.run(person, garment, { category: "auto", mode: "performance" });
+  };
+
+  const canRun = Boolean(person && garment) && !tryOn.isBusy;
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const bottomPad = Platform.OS === "web" ? 34 : insets.bottom;
@@ -115,33 +173,110 @@ export default function LensScreen() {
       </View>
 
       {mode === "mirror" ? (
-        <View style={styles.mirrorMode}>
+        <ScrollView
+          style={styles.mirrorMode}
+          contentContainerStyle={{ paddingBottom: bottomPad + 110 }}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* The generated try-on, or a placeholder until one exists. */}
           <View style={[styles.bodyCanvas, { backgroundColor: colors.card }]}>
-            <View style={[styles.bodyOutline, { borderColor: colors.border }]}>
-              <View style={[styles.bodyHead, { borderColor: colors.border }]} />
-              <View style={[styles.bodyTorso, { borderColor: colors.border }]}>
-                {selectedOutfit.length > 0 && (
-                  <View style={[styles.garmentOverlay, { backgroundColor: colors.midGround }]}>
-                    <Text style={[styles.tryOnLabel, { color: colors.brass }]}>
-                      {selectedOutfit.length} pieces
-                    </Text>
+            {resultUrl ? (
+              <Image source={{ uri: resultUrl }} style={styles.resultImage} resizeMode="contain" />
+            ) : (
+              <View style={styles.busyState}>
+                {tryOn.isBusy ? (
+                  <ActivityIndicator color={colors.brass} />
+                ) : (
+                  <Feather name="user" size={36} color={colors.border} />
+                )}
+                <Text style={[styles.cameraHint, { color: colors.mutedForeground, marginTop: 12 }]}>
+                  {tryOn.isBusy
+                    ? tryOn.progressLabel
+                    : "add both photos to see yourself wearing it"}
+                </Text>
+              </View>
+            )}
+          </View>
+
+          {/* Two input slots: the wearer, and the garment. */}
+          <View style={styles.slotRow}>
+            {([
+              { key: "person", label: "your photo", value: person, icon: "user" },
+              { key: "garment", label: "the garment", value: garment, icon: "shopping-bag" },
+            ] as const).map((slot) => (
+              <View
+                key={slot.key}
+                style={[
+                  styles.slot,
+                  { backgroundColor: colors.card, borderColor: slot.value ? colors.brass : colors.border },
+                ]}
+              >
+                {slot.value ? (
+                  <Image source={{ uri: slot.value.uri }} style={styles.slotThumb} resizeMode="cover" />
+                ) : (
+                  <View style={styles.slotEmpty}>
+                    <Feather name={slot.icon} size={22} color={colors.border} />
                   </View>
                 )}
-              </View>
-              <View style={styles.bodyLegs}>
-                <View style={[styles.bodyLeg, { borderColor: colors.border }]} />
-                <View style={[styles.bodyLeg, { borderColor: colors.border }]} />
-              </View>
-            </View>
 
-            {selectedOutfit.length > 0 && (
-              <View style={[styles.trackingLine, { borderColor: colors.brass }]} />
-            )}
+                <Text style={[styles.slotLabel, { color: colors.warmWhite }]}>{slot.label}</Text>
 
-            <Text style={[styles.cameraHint, { color: colors.mutedForeground }]}>
-              tap an outfit to try on
-            </Text>
+                <View style={styles.slotActions}>
+                  <TouchableOpacity
+                    style={[styles.slotButton, { backgroundColor: colors.brass }]}
+                    onPress={() => choose(slot.key, "camera")}
+                  >
+                    <Feather name="camera" size={13} color={colors.charcoal} />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[
+                      styles.slotButton,
+                      {
+                        backgroundColor: colors.surface,
+                        borderWidth: StyleSheet.hairlineWidth,
+                        borderColor: colors.border,
+                      },
+                    ]}
+                    onPress={() => choose(slot.key, "gallery")}
+                  >
+                    <Feather name="image" size={13} color={colors.mutedForeground} />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ))}
           </View>
+
+          {(tryOn.error || serviceNote) && (
+            <View style={[styles.noticeBox, { borderColor: colors.border, backgroundColor: colors.card }]}>
+              <Feather
+                name={tryOn.error ? "alert-circle" : "info"}
+                size={13}
+                color={tryOn.error ? "#E5843F" : colors.mutedForeground}
+              />
+              <Text style={[styles.noticeText, { color: colors.mutedForeground }]}>
+                {tryOn.error ?? serviceNote}
+              </Text>
+            </View>
+          )}
+
+          <TouchableOpacity
+            style={[
+              styles.tryLinkButton,
+              {
+                marginHorizontal: 20,
+                backgroundColor: canRun ? colors.brass : colors.card,
+                borderColor: canRun ? colors.brass : colors.border,
+              },
+            ]}
+            onPress={runTryOn}
+            disabled={!canRun}
+          >
+            <Text
+              style={[styles.tryLinkText, { color: canRun ? colors.charcoal : colors.mutedForeground }]}
+            >
+              {tryOn.isBusy ? tryOn.progressLabel || "working…" : resultUrl ? "try again" : "try it on"}
+            </Text>
+          </TouchableOpacity>
 
           <View style={styles.outfitFilmStrip}>
             <ScrollView
@@ -188,7 +323,7 @@ export default function LensScreen() {
           </View>
 
           {selectedOutfit.length > 0 && (
-            <View style={[styles.interactionLayer, { bottom: bottomPad + 100 }]}>
+            <View style={styles.askZoraRow}>
               <TouchableOpacity
                 style={[styles.askZoraButton, { backgroundColor: colors.brass }]}
                 onPress={() => ReactNativeHapticFeedback.trigger("impactLight")}
@@ -198,7 +333,7 @@ export default function LensScreen() {
               </TouchableOpacity>
             </View>
           )}
-        </View>
+        </ScrollView>
       ) : (
         <View style={[styles.linkMode, { paddingBottom: bottomPad + 100 }]}>
           <Text style={[styles.linkTitle, { color: colors.warmWhite }]}>
@@ -352,13 +487,82 @@ const styles = StyleSheet.create({
     gap: 0,
   },
   bodyCanvas: {
-    flex: 1,
+    // Fixed rather than flex: this now sits inside a ScrollView.
+    height: height * 0.46,
     alignItems: "center",
     justifyContent: "center",
     marginHorizontal: 20,
     borderRadius: 8,
     position: "relative",
     overflow: "hidden",
+  },
+  resultImage: {
+    width: "100%",
+    height: "100%",
+  },
+  busyState: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 32,
+  },
+  slotRow: {
+    flexDirection: "row",
+    gap: 12,
+    paddingHorizontal: 20,
+    paddingTop: 16,
+  },
+  slot: {
+    flex: 1,
+    borderRadius: 8,
+    borderWidth: StyleSheet.hairlineWidth,
+    padding: 10,
+    alignItems: "center",
+    gap: 8,
+  },
+  slotThumb: {
+    width: "100%",
+    height: 92,
+    borderRadius: 6,
+  },
+  slotEmpty: {
+    width: "100%",
+    height: 92,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  slotLabel: {
+    fontSize: 12,
+    letterSpacing: 0.3,
+  },
+  slotActions: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  slotButton: {
+    width: 34,
+    height: 28,
+    borderRadius: 6,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  noticeBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginHorizontal: 20,
+    marginTop: 14,
+    padding: 10,
+    borderRadius: 8,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  noticeText: {
+    flex: 1,
+    fontSize: 11,
+    lineHeight: 15,
+  },
+  askZoraRow: {
+    alignItems: "center",
+    paddingTop: 6,
   },
   bodyOutline: {
     alignItems: "center",
