@@ -28,29 +28,30 @@ import { handleFashnWebhook } from '../controllers/webhook.controller.js';
 import { getHealth, getReadiness } from '../controllers/health.controller.js';
 import { requireTryOnConfigured } from '../middleware/requireConfigured.js';
 import { errorHandler } from '../middleware/errorHandler.js';
+import { wrap } from '../middleware/wrap.js';
 
 export const apiRouter = Router();
 
-apiRouter.get('/health', getHealth);
-apiRouter.get('/ready', getReadiness);
+apiRouter.get('/health', wrap(getHealth));
+apiRouter.get('/ready', wrap(getReadiness));
 
 // Everything past this point talks to FASHN.
 apiRouter.use(['/ready', '/fashn', '/tryon', '/predictions'], requireTryOnConfigured);
 
-apiRouter.get('/fashn/credits', getCredits);
+apiRouter.get('/fashn/credits', wrap(getCredits));
 
 apiRouter
   .route('/tryon')
-  .post(uploadTryOnImages, createTryOn)
-  .get(listTryOnJobs);
+  .post(uploadTryOnImages, wrap(createTryOn))
+  .get(wrap(listTryOnJobs));
 
 apiRouter
   .route('/tryon/:jobId')
-  .get(getTryOnJob)
-  .delete(deleteTryOnJob);
+  .get(wrap(getTryOnJob))
+  .delete(wrap(deleteTryOnJob));
 
-apiRouter.get('/predictions/:predictionId', getPrediction);
+apiRouter.get('/predictions/:predictionId', wrap(getPrediction));
 
-apiRouter.post('/webhooks/fashn', handleFashnWebhook);
+apiRouter.post('/webhooks/fashn', wrap(handleFashnWebhook));
 
 apiRouter.use(errorHandler);
