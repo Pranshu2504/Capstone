@@ -8,15 +8,14 @@ import {
   Platform,
   Modal,
   TextInput,
-  PermissionsAndroid,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '@/context/ThemeContext';
 import Feather from 'react-native-vector-icons/Feather';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
-import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
 import { useColors } from '@/hooks/useColors';
+import { pickImage, type PickSource } from '@/utils/pickImage';
 
 // Design elements that should stay "woody" or specific to the closet vibe
 const getWoodTone = (theme: 'light' | 'dark') => ({
@@ -261,78 +260,23 @@ export default function WardrobeScreen() {
 
   const topPad = Platform.OS === 'web' ? 44 : insets.top;
 
-  const handleMediaSuccess = () => {
+  /**
+   * A captured garment is handed to the Lens screen, which pairs it with a
+   * photo of the wearer and runs the try-on. Permission prompts and the
+   * web/native split both live in pickImage().
+   */
+  const captureGarment = async (source: PickSource) => {
+    ReactNativeHapticFeedback.trigger('impactLight');
+
+    const garment = await pickImage(source);
+    if (!garment) return; // Cancelled, or permission denied.
+
     ReactNativeHapticFeedback.trigger('notificationSuccess');
-    // For prototype purposes, hitting success on the media picker mimics ingestion
-    // and sends the user directly to the try-on Lens screen.
-    navigation.navigate('lens');
+    navigation.navigate('lens', { garment });
   };
 
-  const handleCamera = async () => {
-    ReactNativeHapticFeedback.trigger('impactLight');
-    
-    if (Platform.OS === 'android') {
-      try {
-        const granted = await PermissionsAndroid.request(
-          PermissionsAndroid.PERMISSIONS.CAMERA,
-          {
-            title: "ZORA Camera Permission",
-            message: "ZORA needs access to your camera to photograph your wardrobe items.",
-            buttonNeutral: "Ask Me Later",
-            buttonNegative: "Cancel",
-            buttonPositive: "OK"
-          }
-        );
-        if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
-          console.log("Camera permission denied");
-          return;
-        }
-      } catch (err) {
-        console.warn(err);
-        return;
-      }
-    }
-
-    const result = await launchCamera({ mediaType: 'photo', cameraType: 'back', saveToPhotos: false });
-    if (!result.didCancel && !result.errorCode) {
-      handleMediaSuccess();
-    }
-  };
-
-  const handleGallery = async () => {
-    ReactNativeHapticFeedback.trigger('impactLight');
-
-    if (Platform.OS === 'android') {
-      try {
-        const permission = Number(Platform.Version) >= 33 
-          ? PermissionsAndroid.PERMISSIONS.READ_MEDIA_IMAGES 
-          : PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE;
-
-        const granted = await PermissionsAndroid.request(
-          permission,
-          {
-            title: "ZORA Gallery Permission",
-            message: "ZORA needs access to your photo library to import images of your clothing.",
-            buttonNeutral: "Ask Me Later",
-            buttonNegative: "Cancel",
-            buttonPositive: "OK"
-          }
-        );
-        if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
-          console.log("Gallery permission denied");
-          return;
-        }
-      } catch (err) {
-        console.warn(err);
-        return;
-      }
-    }
-
-    const result = await launchImageLibrary({ mediaType: 'photo', selectionLimit: 1 });
-    if (!result.didCancel && !result.errorCode) {
-      handleMediaSuccess();
-    }
-  };
+  const handleCamera = () => captureGarment('camera');
+  const handleGallery = () => captureGarment('gallery');
 
   const handleImportSubmit = () => {
     ReactNativeHapticFeedback.trigger('notificationSuccess');
