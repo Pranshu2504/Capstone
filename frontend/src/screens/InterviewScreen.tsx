@@ -36,7 +36,8 @@ export default function InterviewScreen() {
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const bottomPad = Platform.OS === "web" ? 34 : insets.bottom;
 
-  const currentQ = INTERVIEW_QUESTIONS[step];
+  // Clamped so an out-of-range step can never blank the screen mid-flow.
+  const currentQ = INTERVIEW_QUESTIONS[Math.min(step, INTERVIEW_QUESTIONS.length - 1)];
 
   // "Your style DNA" is built entirely from this session's answers — not
   // whatever profile happened to be loaded — so it's correct offline and
@@ -68,6 +69,13 @@ export default function InterviewScreen() {
       ...selections,
       [qId]: exists ? current.filter((v) => v !== value) : [...current, value],
     });
+  };
+
+  /** Straight into the app. The interview only tunes recommendations, so
+   *  refusing it should cost nothing but a less personal first suggestion. */
+  const enterWardrobe = () => {
+    ReactNativeHapticFeedback.trigger("impactLight");
+    navigation.reset({ index: 0, routes: [{ name: "Main" }] });
   };
 
   const goNext = () => {
@@ -136,9 +144,14 @@ export default function InterviewScreen() {
     >
       <View style={styles.header}>
         <Text style={[styles.interviewLabel, { color: colors.brass }]}>The Interview</Text>
-        <Text style={[styles.stepLabel, { color: colors.mutedForeground }]}>
-          {step + 1} / {INTERVIEW_QUESTIONS.length}
-        </Text>
+        <View style={styles.headerRight}>
+          <Text style={[styles.stepLabel, { color: colors.mutedForeground }]}>
+            {step + 1} / {INTERVIEW_QUESTIONS.length}
+          </Text>
+          <TouchableOpacity onPress={enterWardrobe} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
+            <Text style={[styles.skipLink, { color: colors.mutedForeground }]}>skip</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <View style={styles.progressBar}>
@@ -308,6 +321,17 @@ const styles = StyleSheet.create({
     fontFamily: "PlayfairDisplay_700Bold",
     fontSize: 16,
     letterSpacing: 1,
+  },
+  headerRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 16,
+  },
+  skipLink: {
+    fontFamily: "Inter_400Regular",
+    fontSize: 12,
+    letterSpacing: 1,
+    textDecorationLine: "underline",
   },
   stepLabel: {
     fontFamily: "Inter_400Regular",
