@@ -102,6 +102,16 @@ export default function DoorScreen() {
     setError(null);
   };
 
+  /**
+   * Straight in, no account. Requests without a token resolve to the shared
+   * demo wardrobe server-side, so a guest gets a populated app to look
+   * around — and nothing they do is attributed to them.
+   */
+  const continueAsGuest = () => {
+    ReactNativeHapticFeedback.trigger("impactLight");
+    navigation.reset({ index: 0, routes: [{ name: "Main" }] });
+  };
+
   const handleSubmit = async () => {
     setError(null);
 
@@ -226,6 +236,15 @@ export default function DoorScreen() {
               {mode === "login"
                 ? "first time? let's build your wardrobe"
                 : "already have an account? sign in"}
+            </Text>
+          </TouchableOpacity>
+
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
+
+          <TouchableOpacity onPress={continueAsGuest} activeOpacity={0.8} style={styles.guestButton}>
+            <Text style={[styles.guestText, { color: colors.brass }]}>continue as guest</Text>
+            <Text style={[styles.guestHint, { color: colors.mutedForeground }]}>
+              explore with a sample wardrobe · nothing is saved to you
             </Text>
           </TouchableOpacity>
         </Animated.View>
@@ -368,6 +387,27 @@ const styles = StyleSheet.create({
     fontSize: 12,
     letterSpacing: 3,
     textTransform: "uppercase",
+  },
+  divider: {
+    height: StyleSheet.hairlineWidth,
+    width: "100%",
+    marginVertical: 2,
+  },
+  guestButton: {
+    alignItems: "center",
+    gap: 4,
+  },
+  guestText: {
+    fontFamily: "Inter_500Medium",
+    fontSize: 11,
+    letterSpacing: 2,
+    textTransform: "uppercase",
+  },
+  guestHint: {
+    fontFamily: "Inter_400Regular",
+    fontSize: 10,
+    letterSpacing: 0.2,
+    textAlign: "center",
   },
   ghostLink: {
     fontFamily: "Inter_400Regular",
