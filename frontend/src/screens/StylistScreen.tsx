@@ -17,7 +17,7 @@ import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 
 import { useColors } from '@/hooks/useColors';
 import { useWeather } from '@/hooks/useWeather';
-import { useRecommendOutfit, useStylistQuestions } from '@/api/hooks';
+import { useOutfitFeedback, useRecommendOutfit, useStylistQuestions } from '@/api/hooks';
 import type { ApiWardrobeItem, StylistAnswers, StylistQuestion } from '@/api/types';
 import { SCREEN_WIDTH } from '@/constants/layout';
 
@@ -41,6 +41,7 @@ export default function StylistScreen() {
 
   const { data: questionsData, isLoading: questionsLoading, isError } = useStylistQuestions();
   const recommend = useRecommendOutfit();
+  const feedback = useOutfitFeedback();
 
   const questions = useMemo<StylistQuestion[]>(
     () => questionsData?.questions ?? [],
@@ -51,6 +52,7 @@ export default function StylistScreen() {
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<StylistAnswers>({});
   const [thinkingLine, setThinkingLine] = useState(0);
+  const [verdict, setVerdict] = useState<boolean | null>(null);
 
   const fadeAnim = useRef(new Animated.Value(1)).current;
 
@@ -96,6 +98,7 @@ export default function StylistScreen() {
   const submit = () => {
     ReactNativeHapticFeedback.trigger('impactMedium');
     setPhase('thinking');
+    setVerdict(null);
     recommend.mutate(
       {
         ...answers,
@@ -120,9 +123,20 @@ export default function StylistScreen() {
 
   const restart = () => {
     recommend.reset();
+    setVerdict(null);
     setAnswers({});
     setStep(0);
     setPhase('questions');
+  };
+
+  /**
+   * Records a yes/no. Optimistic on purpose — the answer is a preference, not
+   * a transaction, so a failed write should not undo the tap or nag about it.
+   */
+  const answerVerdict = (outfitId: string, liked: boolean) => {
+    ReactNativeHapticFeedback.trigger(liked ? 'notificationSuccess' : 'impactLight');
+    setVerdict(liked);
+    feedback.mutate({ outfitId, liked });
   };
 
   /** Hands one garment to the Lens try-on screen, inside the tab navigator. */
@@ -265,6 +279,50 @@ export default function StylistScreen() {
                   <Text style={[styles.bodyText, { color: colors.warmGray }]}>{line}</Text>
                 </View>
               ))}
+            </View>
+
+            {/* Yes/no on the suggestion. Steers the next one, so it is worth
+                asking before the try-on call to action rather than after. */}
+            <View style={styles.feedbackBlock}>
+              <Text style={[styles.eyebrow, { color: colors.brass }]}>
+                {verdict === null
+                  ? 'would you wear this?'
+                  : verdict
+                    ? 'noted — more looks like this'
+                    : 'noted — you will not see this again'}
+              </Text>
+              {verdict === null && (
+                <View style={styles.feedbackRow}>
+                  <TouchableOpacity
+                    style={[styles.verdictBtn, { borderColor: colors.border, backgroundColor: colors.surface }]}
+                    onPress={() => answerVerdict(result.id, true)}
+                    activeOpacity={0.85}
+                    disabled={feedback.isPending}
+                  >
+                    <Feather name="thumbs-up" size={14} color={colors.brass} />
+                    <Text style={[styles.verdictText, { color: colors.warmWhite }]}>yes</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.verdictBtn, { borderColor: colors.border, backgroundColor: colors.surface }]}
+                    onPress={() => answerVerdict(result.id, false)}
+                    activeOpacity={0.85}
+                    disabled={feedback.isPending}
+                  >
+                    <Feather name="thumbs-down" size={14} color={colors.mutedForeground} />
+                    <Text style={[styles.verdictText, { color: colors.warmWhite }]}>no</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+              {verdict === false && (
+                <TouchableOpacity
+                  style={[styles.verdictBtnWide, { borderColor: colors.brass, backgroundColor: colors.brassSubtle }]}
+                  onPress={submit}
+                  activeOpacity={0.85}
+                >
+                  <Feather name="refresh-cw" size={13} color={colors.brass} />
+                  <Text style={[styles.verdictText, { color: colors.brass }]}>show me another</Text>
+                </TouchableOpacity>
+              )}
             </View>
 
             <TouchableOpacity
@@ -591,6 +649,34 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+
+  feedbackBlock: { gap: 12 },
+  feedbackRow: { flexDirection: 'row', gap: 10 },
+  verdictBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    borderRadius: 24,
+    borderWidth: 1,
+  },
+  verdictBtnWide: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    borderRadius: 24,
+    borderWidth: 1,
+  },
+  verdictText: {
+    fontFamily: 'Inter_500Medium',
+    fontSize: 11,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
   },
 
   reasoningBlock: { gap: 10 },

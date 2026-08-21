@@ -291,3 +291,17 @@ export function useUploadGarments() {
     },
   });
 }
+
+/**
+ * Records a yes/no on a suggestion.
+ *
+ * Invalidates nothing on purpose: the verdict changes the *next*
+ * recommendation, not the one on screen, and refetching would swap the card
+ * out from under the person who just answered.
+ */
+export function useOutfitFeedback() {
+  return useMutation({
+    mutationFn: ({ outfitId, liked }: { outfitId: string; liked: boolean }) =>
+      api.post<{ id: string; liked: boolean }>(`/api/recommend/${outfitId}/feedback`, { liked }),
+  });
+}
