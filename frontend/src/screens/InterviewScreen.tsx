@@ -6,6 +6,7 @@ import {
   Text,
   TextInput,
   ScrollView,
+  Image,
   Animated,
   Platform,
 } from "react-native";
@@ -14,7 +15,9 @@ import { useNavigation } from "@react-navigation/native";
 import Feather from "react-native-vector-icons/Feather";
 import { useColors } from "@/hooks/useColors";
 import { INTERVIEW_QUESTIONS } from "@/constants/mockData";
-import { useUpdateProfile } from "@/api/hooks";
+import { useUpdateProfile, useUploadGarments } from "@/api/hooks";
+import { pickImages, type PickSource } from "@/utils/pickImage";
+import type { ApiWardrobeItem } from "@/api/types";
 import ReactNativeHapticFeedback from "react-native-haptic-feedback";
 import { SCREEN_WIDTH } from '@/constants/layout';
 
@@ -23,13 +26,17 @@ const width = SCREEN_WIDTH;
 export default function InterviewScreen() {
   const colors = useColors();
   const updateProfile = useUpdateProfile();
+  const uploadGarments = useUploadGarments();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
 
   const [step, setStep] = useState(0);
   const [selections, setSelections] = useState<Record<number, string[]>>({});
   const [brandText, setBrandText] = useState("");
-  const [showEnd, setShowEnd] = useState(false);
+  // questions → wardrobe (optional photo upload) → done (the style DNA card)
+  const [phase, setPhase] = useState<"questions" | "wardrobe" | "done">("questions");
+  const [added, setAdded] = useState<ApiWardrobeItem[]>([]);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   const fadeAnim = useRef(new Animated.Value(1)).current;
 
@@ -89,11 +96,123 @@ export default function InterviewScreen() {
         palette: paletteColors,
         favoritesBrand: brandText.trim() || undefined,
       });
-      animateTransition(() => setShowEnd(true));
+      animateTransition(() => setPhase("wardrobe"));
     }
   };
 
-  if (showEnd) {
+  const addPhotos = async (source: PickSource) => {
+    setUploadError(null);
+    const picked = await pickImages(source);
+    if (!picked.length) return;
+
+    try {
+      const items = await uploadGarments.mutateAsync(picked);
+      ReactNativeHapticFeedback.trigger("notificationSuccess");
+      setAdded((prev) => [...prev, ...items]);
+    } catch (err) {
+      ReactNativeHapticFeedback.trigger("notificationError");
+      setUploadError(err instanceof Error ? err.message : "upload failed");
+    }
+  };
+
+  if (phase === "wardrobe") {
+    const busy = uploadGarments.isPending;
+    return (
+      <View
+        style={[
+          styles.container,
+          { backgroundColor: colors.background, paddingTop: topPad + 20, paddingBottom: bottomPad + 16 },
+        ]}
+      >
+        <View style={styles.header}>
+          <Text style={[styles.interviewLabel, { color: colors.brass }]}>Your Wardrobe</Text>
+          <TouchableOpacity onPress={enterWardrobe} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
+            <Text style={[styles.skipLink, { color: colors.mutedForeground }]}>skip</Text>
+          </TouchableOpacity>
+        </View>
+
+        <Text style={[styles.questionText, { color: colors.warmWhite }]}>
+          photograph a few{"\n"}of your clothes
+        </Text>
+        <Text style={[styles.dnaCaption, { color: colors.mutedForeground, textAlign: "left", paddingHorizontal: 0 }]}>
+          ZORA reads each photo — colour, fabric, how dressy it is — and styles you from
+          what you actually own. Add more any time from the wardrobe.
+        </Text>
+
+        <View style={styles.uploadRow}>
+          <TouchableOpacity
+            style={[styles.uploadBtn, { backgroundColor: colors.brass, opacity: busy ? 0.6 : 1 }]}
+            onPress={() => addPhotos("camera")}
+            disabled={busy}
+            activeOpacity={0.85}
+          >
+            <Feather name="camera" size={15} color={colors.charcoal} />
+            <Text style={[styles.uploadBtnText, { color: colors.charcoal }]}>take a photo</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.uploadBtnGhost,
+              { borderColor: colors.border, backgroundColor: colors.surface, opacity: busy ? 0.6 : 1 },
+            ]}
+            onPress={() => addPhotos("gallery")}
+            disabled={busy}
+            activeOpacity={0.85}
+          >
+            <Feather name="image" size={15} color={colors.brass} />
+            <Text style={[styles.uploadBtnText, { color: colors.warmWhite }]}>upload photos</Text>
+          </TouchableOpacity>
+        </View>
+
+        {busy && (
+          <Text style={[styles.uploadStatus, { color: colors.brass }]}>
+            reading your photos…
+          </Text>
+        )}
+        {!!uploadError && (
+          <Text style={[styles.uploadStatus, { color: colors.destructive }]}>{uploadError}</Text>
+        )}
+
+        <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
+          <View style={styles.addedGrid}>
+            {added.map((item) => (
+              <View key={item.id} style={[styles.addedCard, { borderColor: colors.border }]}>
+                {item.image ? (
+                  <Image source={{ uri: item.image }} style={styles.addedPhoto} resizeMode="cover" />
+                ) : (
+                  <View style={[styles.addedPhoto, { backgroundColor: item.color }]} />
+                )}
+                <Text style={[styles.addedName, { color: colors.warmGray }]} numberOfLines={1}>
+                  {item.name}
+                </Text>
+              </View>
+            ))}
+          </View>
+        </ScrollView>
+
+        <TouchableOpacity
+          onPress={() => animateTransition(() => setPhase("done"))}
+          style={[styles.nextButton, { backgroundColor: added.length ? colors.brass : colors.surface }]}
+          activeOpacity={0.85}
+        >
+          <Text
+            style={[
+              styles.nextButtonText,
+              { color: added.length ? colors.charcoal : colors.mutedForeground },
+            ]}
+          >
+            {added.length ? `continue with ${added.length}` : "I'll add these later"}
+          </Text>
+          <Feather
+            name="arrow-right"
+            size={16}
+            color={added.length ? colors.charcoal : colors.mutedForeground}
+          />
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  if (phase === "done") {
     return (
       <View
         style={[
@@ -448,6 +567,60 @@ const styles = StyleSheet.create({
     fontSize: 12,
     letterSpacing: 2.5,
     textTransform: "uppercase",
+  },
+  uploadRow: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  uploadBtn: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 13,
+    borderRadius: 24,
+  },
+  uploadBtnGhost: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 13,
+    borderRadius: 24,
+    borderWidth: 1,
+  },
+  uploadBtnText: {
+    fontFamily: "Inter_500Medium",
+    fontSize: 11,
+    letterSpacing: 1.2,
+    textTransform: "uppercase",
+  },
+  uploadStatus: {
+    fontFamily: "Inter_400Regular",
+    fontSize: 12,
+    letterSpacing: 0.3,
+  },
+  addedGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+  },
+  addedCard: {
+    width: (width - 58) / 3,
+    borderRadius: 6,
+    borderWidth: 1,
+    overflow: "hidden",
+  },
+  addedPhoto: {
+    width: "100%",
+    height: 88,
+  },
+  addedName: {
+    fontFamily: "Inter_400Regular",
+    fontSize: 9,
+    padding: 6,
   },
   endCard: {
     flex: 1,

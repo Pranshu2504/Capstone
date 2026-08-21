@@ -87,3 +87,41 @@ export async function pickImage(source: PickSource): Promise<PickedImage | null>
     type: asset.type ?? 'image/jpeg',
   };
 }
+
+/**
+ * Ask for several photos at once. Resolves an empty array if the user cancels
+ * or denies permission.
+ *
+ * Separate from `pickImage` because the try-on screen fills one fixed slot per
+ * picker, while cataloguing a wardrobe is naturally a batch. `limit` maps to
+ * the platform's selection cap; the backend accepts 8 photos per request.
+ */
+export async function pickImages(source: PickSource, limit = 8): Promise<PickedImage[]> {
+  if (!(await ensureAndroidPermission(source))) return [];
+
+  const options = {
+    mediaType: 'photo' as const,
+    maxWidth: 2000,
+    maxHeight: 2000,
+    quality: 0.9 as const,
+    saveToPhotos: false,
+    selectionLimit: limit,
+  };
+
+  // The camera returns one shot at a time whatever the selection limit says.
+  const result =
+    source === 'camera'
+      ? await launchCamera({ ...options, cameraType: 'back' })
+      : await launchImageLibrary(options);
+
+  if (result.didCancel || result.errorCode) return [];
+
+  return (result.assets ?? [])
+    .filter((asset) => asset.uri)
+    .slice(0, limit)
+    .map((asset, i) => ({
+      uri: asset.uri as string,
+      name: asset.fileName ?? `photo-${Date.now()}-${i}.jpg`,
+      type: asset.type ?? 'image/jpeg',
+    }));
+}

@@ -15,7 +15,7 @@ import { useTheme } from '@/context/ThemeContext';
 import Feather from 'react-native-vector-icons/Feather';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 import { useColors } from '@/hooks/useColors';
-import { pickImage, type PickSource } from '@/utils/pickImage';
+import { pickImage, pickImages, type PickSource } from '@/utils/pickImage';
 import { useUploadGarments } from '@/api/hooks';
 
 // Design elements that should stay "woody" or specific to the closet vibe
@@ -271,14 +271,22 @@ export default function WardrobeScreen() {
   const captureGarment = async (source: PickSource) => {
     ReactNativeHapticFeedback.trigger('impactLight');
 
-    const garment = await pickImage(source);
-    if (!garment) return; // Cancelled, or permission denied.
+    // The camera takes one shot at a time; the gallery can hand over a batch.
+    const picked =
+      source === 'camera'
+        ? [await pickImage(source)].filter((p): p is NonNullable<typeof p> => Boolean(p))
+        : await pickImages(source);
+    if (!picked.length) return; // Cancelled, or permission denied.
 
     setUploadNote(null);
     try {
-      const [item] = await uploadGarments.mutateAsync([garment]);
+      const items = await uploadGarments.mutateAsync(picked);
       ReactNativeHapticFeedback.trigger('notificationSuccess');
-      setUploadNote(`added "${item.name}" to your wardrobe`);
+      setUploadNote(
+        items.length === 1
+          ? `added "${items[0].name}" to your wardrobe`
+          : `added ${items.length} pieces to your wardrobe`,
+      );
     } catch (err) {
       ReactNativeHapticFeedback.trigger('notificationError');
       setUploadNote(err instanceof Error ? err.message : 'upload failed');
