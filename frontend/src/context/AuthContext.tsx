@@ -9,11 +9,7 @@ interface AuthContextType {
   isLoaded: boolean;
   /** True once /api/auth/sync has created the local profile row for this session. */
   isSynced: boolean;
-  signUp: (
-    name: string,
-    email: string,
-    password: string,
-  ) => Promise<{ needsEmailConfirmation: boolean }>;
+  signUp: (name: string, email: string, password: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
@@ -78,7 +74,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       options: { data: { name } },
     });
     if (error) throw error;
-    return { needsEmailConfirmation: !data.session };
+
+    // Signing up is meant to drop you straight into the app. A missing session
+    // means the Supabase project still has "Confirm email" switched on, which
+    // would otherwise look like a silent success that leaves you signed out.
+    if (!data.session) {
+      throw new Error(
+        'Account created, but sign-in needs email confirmation to be turned off for this project.',
+      );
+    }
   };
 
   const signIn: AuthContextType['signIn'] = async (email, password) => {
