@@ -13,6 +13,8 @@ import { userRouter } from './routes/user.js';
 import { wardrobeRouter } from './routes/wardrobe.js';
 import { apiRouter as tryOnRouter } from './tryon/routes/index.js';
 import { env as tryOnEnv, isTryOnConfigured } from './tryon/config/env.js';
+import { storageService } from './tryon/services/storage.service.js';
+import { jobStore } from './tryon/services/jobStore.service.js';
 
 const app = express();
 
@@ -113,6 +115,21 @@ async function ensureSeeded(): Promise<void> {
   }
 }
 
+/**
+ * Startup work the standalone try-on service did in its own entrypoint: create
+ * the upload/output directories, and start the sweeper that evicts expired jobs
+ * from the in-memory store. Without the first, every upload fails with ENOENT;
+ * without the second, the job map grows without bound.
+ */
+async function initTryOn(): Promise<void> {
+  try {
+    await storageService.init();
+    jobStore.startSweeper();
+  } catch (err) {
+    console.error('[tryon] Initialisation failed:', err instanceof Error ? err.message : err);
+  }
+}
+
 const server = app.listen(env.port, () => {
   console.log(`ZORA API listening on http://localhost:${env.port}`);
   console.log(`  CORS origins: ${env.corsOrigins.join(', ')}`);
@@ -120,6 +137,7 @@ const server = app.listen(env.port, () => {
     `  Try-on: ${isTryOnConfigured ? `enabled (${tryOnEnv.FASHN_DEFAULT_MODEL})` : 'disabled — set FASHN_API_KEY'}`,
   );
   void ensureSeeded();
+  void initTryOn();
 });
 
 for (const signal of ['SIGINT', 'SIGTERM'] as const) {
