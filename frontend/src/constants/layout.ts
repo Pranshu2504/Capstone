@@ -19,3 +19,14 @@ export const SCREEN_WIDTH =
   Platform.OS === 'web' ? Math.min(window.width, APP_FRAME_WIDTH) : window.width;
 
 export const SCREEN_HEIGHT = window.height;
+
+/**
+ * Vertical room a scrolling screen must leave at the bottom.
+ *
+ * The "Ask ZORA" button floats above the tab bar rather than scrolling with
+ * the content, so anything padded less than its top edge ends up underneath
+ * it — which is what buried "no bottoms yet" and the calendar's last event.
+ * Measured from the button's own offset and height, plus a little breathing
+ * room, so raising the button means changing this once.
+ */
+export const FLOATING_CTA_CLEARANCE = 180;

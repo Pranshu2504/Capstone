@@ -95,20 +95,24 @@ function TabNavigator() {
           paddingTop: 8,
           elevation: 0,
         },
+        // Five labels across a phone: uppercase plus letterSpacing 1 pushed
+        // "Wardrobe" and "Profile" past their tab and they truncated to
+        // "WARDRO…" and "PROF". Tighter tracking fits them whole.
         tabBarLabelStyle: {
-          fontFamily: 'Inter_400Regular',
+          fontFamily: 'Inter_500Medium',
           fontSize: 11,
-          letterSpacing: 1,
+          letterSpacing: 0.2,
           textTransform: 'uppercase',
           marginTop: 2,
         },
+        tabBarItemStyle: { paddingHorizontal: 0 },
       }}
     >
       <Tab.Screen
         name="mirror"
         component={MirrorScreen}
         options={{
-          title: 'Mirror',
+          title: 'Today',
           tabBarIcon: ({ color }) => <Feather name="sun" size={24} color={color} />,
         }}
       />

@@ -532,11 +532,11 @@ const styles = StyleSheet.create({
   },
   eyebrow: {
     fontFamily: 'Inter_500Medium',
-    fontSize: 10,
+    fontSize: 12,
     letterSpacing: 2.5,
     textTransform: 'uppercase',
   },
-  stepLabel: { fontFamily: 'Inter_400Regular', fontSize: 11, letterSpacing: 1 },
+  stepLabel: { fontFamily: 'Inter_400Regular', fontSize: 12, letterSpacing: 1 },
 
   progressBar: { flexDirection: 'row', gap: 4, marginTop: 16, marginBottom: 24 },
   progressSegment: { height: 2, borderRadius: 1 },
@@ -549,7 +549,7 @@ const styles = StyleSheet.create({
   },
   helper: {
     fontFamily: 'Inter_400Regular',
-    fontSize: 12,
+    fontSize: 13,
     lineHeight: 18,
     marginTop: 8,
   },
@@ -566,7 +566,7 @@ const styles = StyleSheet.create({
   },
   swatch: { width: 22, height: 22, borderRadius: 11 },
   choiceLabel: { fontFamily: 'Inter_500Medium', fontSize: 14, letterSpacing: 0.3 },
-  choiceHint: { fontFamily: 'Inter_400Regular', fontSize: 11, marginTop: 2 },
+  choiceHint: { fontFamily: 'Inter_400Regular', fontSize: 12, marginTop: 2 },
 
   textAnswer: {
     fontFamily: 'Inter_400Regular',
@@ -590,11 +590,11 @@ const styles = StyleSheet.create({
   },
   primaryButtonText: {
     fontFamily: 'Inter_500Medium',
-    fontSize: 11,
+    fontSize: 12,
     letterSpacing: 2.5,
     textTransform: 'uppercase',
   },
-  ghostLink: { fontFamily: 'Inter_400Regular', fontSize: 12, letterSpacing: 0.5 },
+  ghostLink: { fontFamily: 'Inter_400Regular', fontSize: 13, letterSpacing: 0.5 },
 
   pulseRing: { width: 54, height: 54, borderRadius: 27, borderWidth: 1 },
   thinkingText: {
@@ -607,7 +607,7 @@ const styles = StyleSheet.create({
   resultHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   offlineTag: {
     fontFamily: 'Inter_400Regular',
-    fontSize: 11,
+    fontSize: 12,
     letterSpacing: 1.5,
     textTransform: 'uppercase',
   },
@@ -633,10 +633,10 @@ const styles = StyleSheet.create({
   },
   itemPhoto: { width: '100%', height: 130 },
   itemMeta: { padding: 10, gap: 2 },
-  itemName: { fontFamily: 'Inter_500Medium', fontSize: 12 },
+  itemName: { fontFamily: 'Inter_500Medium', fontSize: 13 },
   itemCategory: {
     fontFamily: 'Inter_400Regular',
-    fontSize: 11,
+    fontSize: 12,
     letterSpacing: 1,
     textTransform: 'uppercase',
   },
@@ -674,7 +674,7 @@ const styles = StyleSheet.create({
   },
   verdictText: {
     fontFamily: 'Inter_500Medium',
-    fontSize: 11,
+    fontSize: 12,
     letterSpacing: 1.5,
     textTransform: 'uppercase',
   },

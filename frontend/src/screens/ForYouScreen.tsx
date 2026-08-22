@@ -205,7 +205,7 @@ const styles = StyleSheet.create({
   },
   sectionLabel: {
     fontFamily: "Inter_400Regular",
-    fontSize: 10,
+    fontSize: 12,
     color: "#A3A3A3",
     letterSpacing: 1.5,
     textTransform: "uppercase",
@@ -254,7 +254,7 @@ const styles = StyleSheet.create({
   },
   cardHandle: {
     fontFamily: "Inter_400Regular",
-    fontSize: 11,
+    fontSize: 12,
     color: "#A3A3A3",
   },
   cardActions: {
@@ -273,7 +273,7 @@ const styles = StyleSheet.create({
   },
   saveBtnText: {
     fontFamily: "Inter_400Regular",
-    fontSize: 11,
+    fontSize: 12,
     color: "#C9A84C",
   },
   tryBtn: {
@@ -287,7 +287,7 @@ const styles = StyleSheet.create({
   },
   tryBtnText: {
     fontFamily: "Inter_400Regular",
-    fontSize: 11,
+    fontSize: 12,
     color: "#BBB",
   },
   similarBadge: {
@@ -301,7 +301,7 @@ const styles = StyleSheet.create({
   },
   similarText: {
     fontFamily: "Inter_500Medium",
-    fontSize: 11,
+    fontSize: 12,
     color: "#C9A84C",
     letterSpacing: 0.5,
   },

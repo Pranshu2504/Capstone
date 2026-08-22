@@ -254,8 +254,8 @@ const cs = StyleSheet.create({
     justifyContent: 'center',
   },
   headerCenter: { flex: 1, alignItems: 'center' },
-  headerTitle: { fontFamily: 'Inter_500Medium', fontSize: 12, letterSpacing: 1.5 },
-  headerSub: { fontFamily: 'Inter_400Regular', fontSize: 11, marginTop: 2 },
+  headerTitle: { fontFamily: 'Inter_500Medium', fontSize: 13, letterSpacing: 1.5 },
+  headerSub: { fontFamily: 'Inter_400Regular', fontSize: 12, marginTop: 2 },
 
   // Hanger card
   hangerCard: { borderRadius: 20, overflow: 'hidden', alignItems: 'center' },
@@ -278,7 +278,7 @@ const cs = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 3,
   },
-  copyBadgeText: { fontFamily: 'Inter_500Medium', fontSize: 10 },
+  copyBadgeText: { fontFamily: 'Inter_500Medium', fontSize: 12 },
 
   // Pagination
   pagination: {
@@ -290,13 +290,13 @@ const cs = StyleSheet.create({
     height: 14,
   },
   dot: { height: 6, borderRadius: 3 },
-  paginationText: { fontFamily: 'Inter_400Regular', fontSize: 11 },
+  paginationText: { fontFamily: 'Inter_400Regular', fontSize: 12 },
 
   // Item info — sits directly below pagination, no huge gap
   itemInfo: { alignItems: 'center', paddingTop: 16, paddingHorizontal: 24, gap: 8 },
   itemName: { fontFamily: 'PlayfairDisplay_700Bold', fontSize: 24, textAlign: 'center' },
   tagGold: { borderWidth: 0.5, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 4 },
-  tagGoldText: { fontFamily: 'Inter_400Regular', fontSize: 11, letterSpacing: 0.5 },
+  tagGoldText: { fontFamily: 'Inter_400Regular', fontSize: 12, letterSpacing: 0.5 },
 
   // Actions — immediately below item info
   actions: {
@@ -308,5 +308,5 @@ const cs = StyleSheet.create({
   btnTryOn:  { flex: 1, borderRadius: 12, paddingVertical: 13, alignItems: 'center' },
   btnPair:   { flex: 1, borderWidth: 0.5, borderRadius: 12, paddingVertical: 13, alignItems: 'center' },
   btnRemove: { flex: 1, borderWidth: 0.5, borderRadius: 12, paddingVertical: 13, alignItems: 'center' },
-  btnText:   { fontFamily: 'Inter_500Medium', fontSize: 12 },
+  btnText:   { fontFamily: 'Inter_500Medium', fontSize: 13 },
 });

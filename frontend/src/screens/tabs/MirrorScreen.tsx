@@ -14,7 +14,7 @@ import Feather from "react-native-vector-icons/Feather";
 import ReactNativeHapticFeedback from "react-native-haptic-feedback";
 import { useColors } from "@/hooks/useColors";
 import { useOutfitToday } from "@/api/hooks";
-import { SCREEN_WIDTH } from '@/constants/layout';
+import { SCREEN_WIDTH, FLOATING_CTA_CLEARANCE } from '@/constants/layout';
 
 const width = SCREEN_WIDTH;
 
@@ -68,7 +68,7 @@ export default function MirrorScreen() {
         style={[styles.container, { backgroundColor: colors.background }]}
         contentContainerStyle={[
           styles.content,
-          { paddingTop: topPad + 16, paddingBottom: bottomPad + 120 },
+          { paddingTop: topPad + 16, paddingBottom: bottomPad + FLOATING_CTA_CLEARANCE },
         ]}
         showsVerticalScrollIndicator={false}
       >
@@ -174,12 +174,12 @@ const styles = StyleSheet.create({
   },
   mastheadDate: {
     fontFamily: "Inter_400Regular",
-    fontSize: 11,
+    fontSize: 12,
     letterSpacing: 0.5,
   },
   mastheadWeather: {
     fontFamily: "Inter_400Regular",
-    fontSize: 11,
+    fontSize: 12,
   },
   heroCard: {
     borderRadius: 4,
@@ -205,7 +205,7 @@ const styles = StyleSheet.create({
   },
   heroSubhead: {
     fontFamily: "Inter_400Regular",
-    fontSize: 11,
+    fontSize: 12,
     letterSpacing: 0.3,
     marginBottom: 12,
   },
@@ -220,7 +220,7 @@ const styles = StyleSheet.create({
   },
   heroCTAText: {
     fontFamily: "Inter_500Medium",
-    fontSize: 11,
+    fontSize: 12,
     letterSpacing: 1.5,
     textTransform: "uppercase",
   },
@@ -250,7 +250,7 @@ const styles = StyleSheet.create({
   },
   stylistCTASub: {
     fontFamily: "Inter_400Regular",
-    fontSize: 11,
+    fontSize: 12,
     lineHeight: 16,
     marginTop: 3,
   },

@@ -148,7 +148,7 @@ const styles = StyleSheet.create({
   },
   sectionLabel: {
     fontFamily: "Inter_400Regular",
-    fontSize: 10,
+    fontSize: 12,
     color: "#A3A3A3",
     letterSpacing: 1.5,
     textTransform: "uppercase",
@@ -185,12 +185,12 @@ const styles = StyleSheet.create({
   },
   stylePalTitle: {
     fontFamily: "Inter_500Medium",
-    fontSize: 12,
+    fontSize: 13,
     color: "#E0D8CC",
   },
   stylePalSub: {
     fontFamily: "Inter_400Regular",
-    fontSize: 11,
+    fontSize: 12,
     color: "#BBBBBB",
     lineHeight: 16,
   },
@@ -209,12 +209,12 @@ const styles = StyleSheet.create({
   },
   palOutfitName: {
     fontFamily: "Inter_500Medium",
-    fontSize: 12,
+    fontSize: 13,
     color: "#E0D8CC",
   },
   palOutfitSub: {
     fontFamily: "Inter_400Regular",
-    fontSize: 10,
+    fontSize: 12,
     color: "#A3A3A3",
     lineHeight: 15,
   },
@@ -230,7 +230,7 @@ const styles = StyleSheet.create({
   },
   palActionSolidText: {
     fontFamily: "Inter_500Medium",
-    fontSize: 11,
+    fontSize: 12,
     color: "#0A0A0A",
   },
   palActionGhost: {
@@ -243,7 +243,7 @@ const styles = StyleSheet.create({
   },
   palActionGhostText: {
     fontFamily: "Inter_400Regular",
-    fontSize: 11,
+    fontSize: 12,
     color: "#C9A84C",
   },
   activityCard: {
@@ -268,7 +268,7 @@ const styles = StyleSheet.create({
   },
   activityInitials: {
     fontFamily: "Inter_500Medium",
-    fontSize: 11,
+    fontSize: 12,
     color: "#C9A84C",
   },
   activityInfo: {
@@ -282,7 +282,7 @@ const styles = StyleSheet.create({
   },
   activityAction: {
     fontFamily: "Inter_400Regular",
-    fontSize: 11,
+    fontSize: 12,
     color: "#BBBBBB",
   },
   activitySwatches: {
@@ -297,7 +297,7 @@ const styles = StyleSheet.create({
   },
   activityTime: {
     fontFamily: "Inter_400Regular",
-    fontSize: 10,
+    fontSize: 12,
     color: "#A3A3A3",
   },
 });

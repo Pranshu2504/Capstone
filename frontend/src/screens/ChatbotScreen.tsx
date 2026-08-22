@@ -76,7 +76,7 @@ const styles = StyleSheet.create({
   },
   dummyInfo: {
     fontFamily: 'Inter_400Regular',
-    fontSize: 12,
+    fontSize: 13,
     textAlign: 'center',
     marginTop: 'auto',
     marginBottom: 20,

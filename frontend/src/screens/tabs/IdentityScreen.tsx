@@ -7,6 +7,7 @@ import {
   Text,
   Platform,
   Modal,
+  Image,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
@@ -18,10 +19,10 @@ import Animated, {
   withSpring, 
   interpolateColor 
 } from "react-native-reanimated";
-import { useUser } from "@/api/hooks";
+import { useUser, useWardrobe } from "@/api/hooks";
 import { useTheme } from "@/context/ThemeContext";
 import { useColors } from "@/hooks/useColors";
-import { SCREEN_WIDTH } from '@/constants/layout';
+import { SCREEN_WIDTH, FLOATING_CTA_CLEARANCE } from '@/constants/layout';
 
 const width = SCREEN_WIDTH;
 
@@ -34,42 +35,12 @@ const RADAR_DIMS = [
   { label: "Everyday", opposite: "Occasion", value: 0.58 },
 ];
 
-const YEAR_IN_STYLE = [
-  {
-    label: "most-worn piece",
-    value: "Black Cashmere Coat",
-    stat: "20×",
-    color: "#1A1A2A",
-    copy: "worn through every season",
-  },
-  {
-    label: "most repeated outfit",
-    value: "Effortless Mondays",
-    stat: "8×",
-    color: "#1A2218",
-    copy: "because some looks just work",
-  },
-  {
-    label: "boldest look",
-    value: "The Amber Statement",
-    stat: "Apr 13",
-    color: "#201A08",
-    copy: "you went for it",
-  },
-  {
-    label: "the surprise",
-    value: "Linen Trousers",
-    stat: "12× worn",
-    color: "#201818",
-    copy: "bought on a whim, wore constantly",
-  },
-];
 
 const INITIAL_SETTINGS = [
   { icon: "sliders", label: "Style Preferences", status: "Effortless · Sharp · Powerful" },
   { icon: "user", label: "Size Profile", status: "S / EU 36 / 165cm" },
   { icon: "calendar", label: "Calendar Sync", status: "Not synced" },
-  { icon: "monitor", label: "Mirror Connect", status: "Not connected" },
+  { icon: "monitor", label: "Smart Display", status: "Not connected" },
   { icon: "lock", label: "Privacy", status: "Friends only" },
   { icon: "at-sign", label: "Social Accounts", status: "No accounts linked" },
 ];
@@ -120,6 +91,7 @@ export default function IdentityScreen() {
   const navigation = useNavigation<any>();
   const colors = useColors();
   const { data: user } = useUser();
+  const { data: wardrobe } = useWardrobe();
   const { theme, setTheme } = useTheme();
   const [settingsModal, setSettingsModal] = useState<string | null>(null);
   const [settingsData, setSettingsData] = useState(INITIAL_SETTINGS);
@@ -141,7 +113,7 @@ export default function IdentityScreen() {
           let newStatus = "Connected";
           if (settingsModal === "Social Accounts") newStatus = "Instagram & TikTok linked";
           if (settingsModal === "Calendar Sync") newStatus = "Google Calendar synced";
-          if (settingsModal === "Mirror Connect") newStatus = "ZORA Mirror Active";
+          if (settingsModal === "Smart Display") newStatus = "ZORA Display Active";
           return { ...item, status: newStatus };
         }
         return item;
@@ -180,17 +152,39 @@ export default function IdentityScreen() {
     };
   };
 
-  const mostLoved = [
-    { name: "Black Cashmere Coat", color: "#1C1C1C", times: 20 },
-    { name: "Chelsea Boots", color: "#1C1C1C", times: 18 },
-    { name: "Leather Oxford Shoes", color: "#3B2A1A", times: 15 },
-  ];
+  // Both strips read the real wardrobe. Hardcoding them meant the profile
+  // reported wear counts for clothes the person had never owned.
+  const byWear = [...wardrobe].sort((a, b) => b.timesWorn - a.timesWorn);
+  const mostLoved = byWear
+    .slice(0, 3)
+    .map((i) => ({ name: i.name, color: i.color, times: i.timesWorn, image: i.image }));
+  // "Year in Style" was four invented milestones — a coat nobody owned worn
+  // 20 times, an outfit nobody wore. Derived from the real wardrobe now, and
+  // the section hides itself rather than inventing a retrospective.
+  const top = byWear[0];
+  const yearInStyle = top
+    ? [
+        {
+          label: 'most-worn piece',
+          value: top.name,
+          stat: `${top.timesWorn}×`,
+          color: '#1A1A2A',
+          copy: top.timesWorn ? 'your most reached-for piece' : 'nothing worn yet',
+        },
+        {
+          label: 'pieces catalogued',
+          value: `${wardrobe.length} item${wardrobe.length === 1 ? '' : 's'}`,
+          stat: `${wardrobe.filter((i) => i.image).length}`,
+          color: '#1A2218',
+          copy: 'photographed into your wardrobe',
+        },
+      ]
+    : [];
 
-  const dusty = [
-    { name: "Oversized Blazer", color: "#6B5B4E", times: 1 },
-    { name: "Linen Wide-Leg Pants", color: "#C8BCA8", times: 3 },
-    { name: "Merino Turtleneck", color: "#8B8682", times: 2 },
-  ];
+  const dusty = [...wardrobe]
+    .sort((a, b) => a.timesWorn - b.timesWorn)
+    .slice(0, 3)
+    .map((i) => ({ name: i.name, color: i.color, times: i.timesWorn, image: i.image }));
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -216,7 +210,7 @@ export default function IdentityScreen() {
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: bottomPad + 100 }]}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: bottomPad + FLOATING_CTA_CLEARANCE }]}
       >
         <View style={styles.styleCard}>
           <View style={styles.colorStripes}>
@@ -353,9 +347,18 @@ export default function IdentityScreen() {
 
           <Text style={[styles.subLabel, { color: colors.primary }]}>most loved</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.itemRail}>
+            {!mostLoved.length && (
+              <Text style={[styles.emptyRail, { color: colors.mutedForeground }]}>
+                nothing worn yet
+              </Text>
+            )}
             {mostLoved.map((item, i) => (
               <View key={i} style={[styles.reusabilityCard, styles.lovedCard, { backgroundColor: theme === 'dark' ? '#161208' : colors.card, borderColor: colors.brassSubtle }]}>
-                <View style={[styles.reusabilityBlock, { backgroundColor: item.color }]} />
+                {item.image ? (
+                  <Image source={{ uri: item.image }} style={styles.reusabilityBlock} resizeMode="cover" />
+                ) : (
+                  <View style={[styles.reusabilityBlock, { backgroundColor: item.color }]} />
+                )}
                 <Text style={[styles.reusabilityName, { color: colors.text }]} numberOfLines={2}>{item.name}</Text>
                 <Text style={[styles.reusabilityTimes, { color: colors.primary }]}>{item.times}× worn</Text>
               </View>
@@ -364,9 +367,18 @@ export default function IdentityScreen() {
 
           <Text style={[styles.subLabel, { color: colors.mutedForeground }]}>collecting dust</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.itemRail}>
+            {!dusty.length && (
+              <Text style={[styles.emptyRail, { color: colors.mutedForeground }]}>
+                add pieces to see what you neglect
+              </Text>
+            )}
             {dusty.map((item, i) => (
               <View key={i} style={[styles.reusabilityCard, styles.dustyCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                <View style={[styles.reusabilityBlock, { backgroundColor: item.color, opacity: 0.5 }]} />
+                {item.image ? (
+                  <Image source={{ uri: item.image }} style={[styles.reusabilityBlock, { opacity: 0.6 }]} resizeMode="cover" />
+                ) : (
+                  <View style={[styles.reusabilityBlock, { backgroundColor: item.color, opacity: 0.5 }]} />
+                )}
                 <Text style={[styles.reusabilityName, { color: colors.text, opacity: 0.6 }]} numberOfLines={2}>
                   {item.name}
                 </Text>
@@ -376,13 +388,14 @@ export default function IdentityScreen() {
           </ScrollView>
         </View>
 
+        {!!yearInStyle.length && (
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>Year in Style</Text>
             <Text style={[styles.sectionSub, { color: colors.mutedForeground }]}>2025 — 2026</Text>
           </View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.yearRail}>
-            {YEAR_IN_STYLE.map((card, i) => (
+            {yearInStyle.map((card, i) => (
               <View key={i} style={[styles.yearCard, { backgroundColor: theme === 'dark' ? card.color : colors.card, borderColor: colors.border }]}>
                 <Text style={[styles.yearCardLabel, { color: colors.mutedForeground }]}>{card.label}</Text>
                 <Text style={[styles.yearCardStat, { color: colors.primary }]}>{card.stat}</Text>
@@ -392,6 +405,7 @@ export default function IdentityScreen() {
             ))}
           </ScrollView>
         </View>
+        )}
 
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Settings</Text>
@@ -442,14 +456,14 @@ export default function IdentityScreen() {
             <Text style={[styles.settingsSheetNote, { color: colors.text }]}>
               {settingsModal === "Calendar Sync"
                 ? "Seamlessly integrate your daily agenda to let ZORA suggest event-appropriate outfits."
-                : settingsModal === "Mirror Connect"
+                : settingsModal === "Smart Display"
                 ? "Connect ZORA to a physical smart mirror device for hands-free 3D outfit previews."
                 : settingsModal === "Social Accounts"
                 ? "Link your social media to let ZORA analyze to your aesthetic pins and saved posts."
                 : "Adjust your preferences for this section."}
             </Text>
 
-            {(settingsModal === "Calendar Sync" || settingsModal === "Mirror Connect" || settingsModal === "Social Accounts") && (
+            {(settingsModal === "Calendar Sync" || settingsModal === "Smart Display" || settingsModal === "Social Accounts") && (
               <TouchableOpacity
                 style={[
                   styles.linkButton,
@@ -568,7 +582,7 @@ const styles = StyleSheet.create({
   },
   statLabel: {
     fontFamily: "Inter_400Regular",
-    fontSize: 11,
+    fontSize: 12,
     color: "rgba(240,236,228,0.5)",
     letterSpacing: 1,
     textTransform: "uppercase",
@@ -592,7 +606,7 @@ const styles = StyleSheet.create({
   },
   exportBtnText: {
     fontFamily: "Inter_500Medium",
-    fontSize: 10,
+    fontSize: 12,
     color: "#C9A84C",
     letterSpacing: 0.5,
   },
@@ -612,7 +626,7 @@ const styles = StyleSheet.create({
   },
   sectionSub: {
     fontFamily: "Inter_400Regular",
-    fontSize: 10,
+    fontSize: 12,
     color: "#A3A3A3",
     letterSpacing: 0.5,
   },
@@ -642,7 +656,7 @@ const styles = StyleSheet.create({
   },
   radarLabel: {
     fontFamily: "Inter_400Regular",
-    fontSize: 11,
+    fontSize: 12,
     color: "#A3A3A3",
     width: 60,
     textAlign: "center",
@@ -670,17 +684,23 @@ const styles = StyleSheet.create({
   },
   sustainLabel: {
     fontFamily: "Inter_400Regular",
-    fontSize: 10,
+    fontSize: 12,
     color: "#A3A3A3",
   },
   subLabel: {
     fontFamily: "Inter_500Medium",
-    fontSize: 10,
+    fontSize: 12,
     letterSpacing: 2,
     textTransform: "uppercase",
   },
   itemRail: {
     marginHorizontal: -20,
+  },
+  emptyRail: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 13,
+    paddingVertical: 20,
+    paddingHorizontal: 4,
   },
   reusabilityCard: {
     width: 110,
@@ -705,13 +725,13 @@ const styles = StyleSheet.create({
   },
   reusabilityName: {
     fontFamily: "Inter_400Regular",
-    fontSize: 11,
+    fontSize: 12,
     color: "#E0D8CC",
     lineHeight: 15,
   },
   reusabilityTimes: {
     fontFamily: "Inter_400Regular",
-    fontSize: 10,
+    fontSize: 12,
     color: "#C9A84C",
   },
   yearRail: {
@@ -730,7 +750,7 @@ const styles = StyleSheet.create({
   },
   yearCardLabel: {
     fontFamily: "Inter_500Medium",
-    fontSize: 10,
+    fontSize: 12,
     color: "#A3A3A3",
     letterSpacing: 1.5,
     textTransform: "uppercase",
@@ -749,7 +769,7 @@ const styles = StyleSheet.create({
   },
   yearCardCopy: {
     fontFamily: "Inter_400Regular",
-    fontSize: 10,
+    fontSize: 12,
     color: "#A3A3A3",
     lineHeight: 15,
   },
@@ -783,7 +803,7 @@ const styles = StyleSheet.create({
   },
   settingsTileStatus: {
     fontFamily: "Inter_400Regular",
-    fontSize: 11,
+    fontSize: 12,
     color: "#A3A3A3",
     flex: 1,
     textAlign: "right",
@@ -829,7 +849,7 @@ const styles = StyleSheet.create({
   },
   settingsSheetCloseText: {
     fontFamily: "Inter_500Medium",
-    fontSize: 12,
+    fontSize: 13,
     color: "#0A0A0A",
     letterSpacing: 2,
     textTransform: "uppercase",
@@ -844,7 +864,7 @@ const styles = StyleSheet.create({
   },
   linkButtonText: {
     fontFamily: "Inter_500Medium",
-    fontSize: 12,
+    fontSize: 13,
     color: "#C9A84C",
     letterSpacing: 1.5,
     textTransform: "uppercase",

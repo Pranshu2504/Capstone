@@ -14,7 +14,7 @@ import Feather from "react-native-vector-icons/Feather";
 import ReactNativeHapticFeedback from "react-native-haptic-feedback";
 import { useColors } from "@/hooks/useColors";
 import { useTheme } from "@/context/ThemeContext";
-import { SCREEN_WIDTH } from '@/constants/layout';
+import { SCREEN_WIDTH, FLOATING_CTA_CLEARANCE } from '@/constants/layout';
 
 const width = SCREEN_WIDTH;
 
@@ -115,7 +115,7 @@ export default function PulseScreen() {
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: bottomPad + 100 }]}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: bottomPad + FLOATING_CTA_CLEARANCE }]}
       >
         <View>
           <Text style={styles.sectionLabel}>THIS WEEK'S VIBES</Text>
@@ -418,7 +418,7 @@ const styles = StyleSheet.create({
   },
   togglePillText: {
     fontFamily: "Inter_400Regular",
-    fontSize: 11,
+    fontSize: 12,
     color: "#BBBBBB",
     letterSpacing: 0.5,
   },
@@ -432,7 +432,7 @@ const styles = StyleSheet.create({
   },
   sectionLabel: {
     fontFamily: "Inter_400Regular",
-    fontSize: 10,
+    fontSize: 12,
     color: "#A3A3A3",
     letterSpacing: 1.5,
     textTransform: "uppercase",
@@ -464,7 +464,7 @@ const styles = StyleSheet.create({
   },
   vibeName: {
     fontFamily: "Inter_400Regular",
-    fontSize: 11,
+    fontSize: 12,
     color: "#D1D1D1",
   },
   vibeFilterBar: {
@@ -478,12 +478,12 @@ const styles = StyleSheet.create({
   },
   vibeFilterText: {
     fontFamily: "Inter_400Regular",
-    fontSize: 11,
+    fontSize: 12,
     color: "#C9A84C",
   },
   vibeFilterClear: {
     fontFamily: "Inter_500Medium",
-    fontSize: 10,
+    fontSize: 12,
     color: "#BBB",
   },
   masonryGrid: {
@@ -530,7 +530,7 @@ const styles = StyleSheet.create({
   },
   cardHandle: {
     fontFamily: "Inter_400Regular",
-    fontSize: 11,
+    fontSize: 12,
     color: "#A3A3A3",
   },
   cardActions: {
@@ -549,7 +549,7 @@ const styles = StyleSheet.create({
   },
   saveBtnText: {
     fontFamily: "Inter_400Regular",
-    fontSize: 11,
+    fontSize: 12,
     color: "#C9A84C",
   },
   tryBtn: {
@@ -563,7 +563,7 @@ const styles = StyleSheet.create({
   },
   tryBtnText: {
     fontFamily: "Inter_400Regular",
-    fontSize: 11,
+    fontSize: 12,
     color: "#BBB",
   },
   similarBadge: {
@@ -577,7 +577,7 @@ const styles = StyleSheet.create({
   },
   similarText: {
     fontFamily: "Inter_500Medium",
-    fontSize: 11,
+    fontSize: 12,
     color: "#C9A84C",
     letterSpacing: 0.5,
   },
@@ -602,7 +602,7 @@ const styles = StyleSheet.create({
   },
   radarSub: {
     fontFamily: "Inter_400Regular",
-    fontSize: 10,
+    fontSize: 12,
     color: "#A3A3A3",
   },
   liveBadge: {
@@ -613,7 +613,7 @@ const styles = StyleSheet.create({
   },
   liveText: {
     fontFamily: "Inter_400Regular",
-    fontSize: 11,
+    fontSize: 12,
     color: "#C9A84C",
   },
   trendRow: {
@@ -623,7 +623,7 @@ const styles = StyleSheet.create({
   },
   trendName: {
     fontFamily: "Inter_400Regular",
-    fontSize: 11,
+    fontSize: 12,
     color: "#D1D1D1",
     width: 90,
   },
@@ -641,7 +641,7 @@ const styles = StyleSheet.create({
   },
   trendDelta: {
     fontFamily: "Inter_500Medium",
-    fontSize: 10,
+    fontSize: 12,
     width: 36,
     textAlign: "right",
   },
@@ -677,12 +677,12 @@ const styles = StyleSheet.create({
   },
   stylePalTitle: {
     fontFamily: "Inter_500Medium",
-    fontSize: 12,
+    fontSize: 13,
     color: "#E0D8CC",
   },
   stylePalSub: {
     fontFamily: "Inter_400Regular",
-    fontSize: 11,
+    fontSize: 12,
     color: "#BBBBBB",
     lineHeight: 16,
   },
@@ -701,12 +701,12 @@ const styles = StyleSheet.create({
   },
   palOutfitName: {
     fontFamily: "Inter_500Medium",
-    fontSize: 12,
+    fontSize: 13,
     color: "#E0D8CC",
   },
   palOutfitSub: {
     fontFamily: "Inter_400Regular",
-    fontSize: 10,
+    fontSize: 12,
     color: "#A3A3A3",
     lineHeight: 15,
   },
@@ -722,7 +722,7 @@ const styles = StyleSheet.create({
   },
   palActionSolidText: {
     fontFamily: "Inter_500Medium",
-    fontSize: 11,
+    fontSize: 12,
     color: "#0A0A0A",
   },
   palActionGhost: {
@@ -735,7 +735,7 @@ const styles = StyleSheet.create({
   },
   palActionGhostText: {
     fontFamily: "Inter_400Regular",
-    fontSize: 11,
+    fontSize: 12,
     color: "#C9A84C",
   },
   activityCard: {
@@ -760,7 +760,7 @@ const styles = StyleSheet.create({
   },
   activityInitials: {
     fontFamily: "Inter_500Medium",
-    fontSize: 11,
+    fontSize: 12,
     color: "#C9A84C",
   },
   activityInfo: {
@@ -774,7 +774,7 @@ const styles = StyleSheet.create({
   },
   activityAction: {
     fontFamily: "Inter_400Regular",
-    fontSize: 11,
+    fontSize: 12,
     color: "#BBBBBB",
   },
   activitySwatches: {
@@ -789,7 +789,7 @@ const styles = StyleSheet.create({
   },
   activityTime: {
     fontFamily: "Inter_400Regular",
-    fontSize: 10,
+    fontSize: 12,
     color: "#A3A3A3",
   },
   modalBackdrop: {
@@ -840,7 +840,7 @@ const styles = StyleSheet.create({
   },
   postDetailHandle: {
     fontFamily: "Inter_400Regular",
-    fontSize: 12,
+    fontSize: 13,
     color: "#A3A3A3",
   },
   postDetailActions: {
@@ -860,7 +860,7 @@ const styles = StyleSheet.create({
   },
   postDetailSaveText: {
     fontFamily: "Inter_500Medium",
-    fontSize: 12,
+    fontSize: 13,
     color: "#0A0A0A",
   },
   postDetailTryOn: {
@@ -877,7 +877,7 @@ const styles = StyleSheet.create({
   },
   postDetailTryOnText: {
     fontFamily: "Inter_500Medium",
-    fontSize: 12,
+    fontSize: 13,
     color: "#C9A84C",
   },
   trendDetailSheet: {
@@ -917,7 +917,7 @@ const styles = StyleSheet.create({
   },
   trendBarDay: {
     fontFamily: "Inter_400Regular",
-    fontSize: 11,
+    fontSize: 12,
     color: "#A3A3A3",
   },
   trendMiniGrid: {

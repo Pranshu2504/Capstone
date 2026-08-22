@@ -15,12 +15,12 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import Feather from "react-native-vector-icons/Feather";
 import { useColors } from "@/hooks/useColors";
-import { useWardrobe } from "@/api/hooks";
+import { useOutfits, useWardrobe } from "@/api/hooks";
 import ReactNativeHapticFeedback from "react-native-haptic-feedback";
 import { pickImage, type PickedImage, type PickSource } from "@/utils/pickImage";
 import { useTryOn } from "@/hooks/useTryOn";
 import { checkTryOnService } from "@/services/tryOnApi";
-import { SCREEN_WIDTH, SCREEN_HEIGHT } from '@/constants/layout';
+import { SCREEN_WIDTH, SCREEN_HEIGHT, FLOATING_CTA_CLEARANCE } from '@/constants/layout';
 
 const width = SCREEN_WIDTH;
 const height = SCREEN_HEIGHT;
@@ -30,6 +30,7 @@ type Mode = "mirror" | "link";
 export default function LensScreen() {
   const colors = useColors();
   const { data: wardrobeItems } = useWardrobe();
+  const { data: savedOutfits } = useOutfits();
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const insets = useSafeAreaInsets();
@@ -94,12 +95,14 @@ export default function LensScreen() {
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const bottomPad = Platform.OS === "web" ? 34 : insets.bottom;
 
-  const outfits = [
-    { id: "effortless-monday", label: "effortless monday", items: ["1", "2", "3", "5"] },
-    { id: "editorial-power", label: "editorial power", items: ["1", "3", "5"] },
-    { id: "weekend-ease", label: "weekend ease", items: ["4", "6", "9"] },
-    { id: "evening-look", label: "evening look", items: ["10", "7", "5"] },
-  ];
+  // Real saved outfits. The four hardcoded ones referenced item ids "1".."10"
+  // that stopped existing the moment the wardrobe became real, so the swatches
+  // silently rendered nothing.
+  const outfits = savedOutfits.map((o) => ({
+    id: o.id,
+    label: o.headline,
+    items: o.itemDetails.map((i) => i.id),
+  }));
 
   const processLink = () => {
     if (!linkUrl.trim()) return;
@@ -151,7 +154,7 @@ export default function LensScreen() {
                 { color: mode === "mirror" ? colors.charcoal : colors.mutedForeground },
               ]}
             >
-              Mirror
+              Try On
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -176,7 +179,7 @@ export default function LensScreen() {
       {mode === "mirror" ? (
         <ScrollView
           style={styles.mirrorMode}
-          contentContainerStyle={{ paddingBottom: bottomPad + 110 }}
+          contentContainerStyle={{ paddingBottom: bottomPad + FLOATING_CTA_CLEARANCE }}
           showsVerticalScrollIndicator={false}
         >
           {/* The generated try-on, or a placeholder until one exists. */}
@@ -279,6 +282,7 @@ export default function LensScreen() {
             </Text>
           </TouchableOpacity>
 
+          {!!outfits.length && (
           <View style={styles.outfitFilmStrip}>
             <ScrollView
               horizontal
@@ -322,6 +326,7 @@ export default function LensScreen() {
               })}
             </ScrollView>
           </View>
+          )}
 
           {selectedOutfit.length > 0 && (
             <View style={styles.askZoraRow}>
@@ -336,7 +341,7 @@ export default function LensScreen() {
           )}
         </ScrollView>
       ) : (
-        <View style={[styles.linkMode, { paddingBottom: bottomPad + 100 }]}>
+        <View style={[styles.linkMode, { paddingBottom: bottomPad + FLOATING_CTA_CLEARANCE }]}>
           <Text style={[styles.linkTitle, { color: colors.warmWhite }]}>
             paste a link to try it on
           </Text>
@@ -480,7 +485,7 @@ const styles = StyleSheet.create({
   },
   modeTabText: {
     fontFamily: "Inter_500Medium",
-    fontSize: 12,
+    fontSize: 13,
     letterSpacing: 0.5,
   },
   mirrorMode: {
@@ -532,7 +537,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   slotLabel: {
-    fontSize: 12,
+    fontSize: 13,
     letterSpacing: 0.3,
   },
   slotActions: {
@@ -558,7 +563,7 @@ const styles = StyleSheet.create({
   },
   noticeText: {
     flex: 1,
-    fontSize: 11,
+    fontSize: 12,
     lineHeight: 15,
   },
   askZoraRow: {
@@ -591,7 +596,7 @@ const styles = StyleSheet.create({
   },
   tryOnLabel: {
     fontFamily: "Inter_500Medium",
-    fontSize: 11,
+    fontSize: 12,
     letterSpacing: 1,
     textTransform: "uppercase",
   },
@@ -619,7 +624,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     bottom: 16,
     fontFamily: "Inter_400Regular",
-    fontSize: 11,
+    fontSize: 12,
     letterSpacing: 1,
   },
   outfitFilmStrip: {
@@ -649,7 +654,7 @@ const styles = StyleSheet.create({
   },
   filmLabel: {
     fontFamily: "Inter_400Regular",
-    fontSize: 10,
+    fontSize: 12,
     lineHeight: 14,
   },
   interactionLayer: {
@@ -667,7 +672,7 @@ const styles = StyleSheet.create({
   },
   askZoraText: {
     fontFamily: "Inter_500Medium",
-    fontSize: 12,
+    fontSize: 13,
     letterSpacing: 1,
   },
   linkMode: {
@@ -708,7 +713,7 @@ const styles = StyleSheet.create({
   },
   tryLinkText: {
     fontFamily: "Inter_500Medium",
-    fontSize: 12,
+    fontSize: 13,
     letterSpacing: 2,
     textTransform: "uppercase",
   },
@@ -730,7 +735,7 @@ const styles = StyleSheet.create({
   },
   processingText: {
     fontFamily: "Inter_400Regular",
-    fontSize: 12,
+    fontSize: 13,
     letterSpacing: 0.5,
   },
   emptyLensState: {
@@ -739,7 +744,7 @@ const styles = StyleSheet.create({
   },
   emptyLensText: {
     fontFamily: "Inter_400Regular",
-    fontSize: 12,
+    fontSize: 13,
     textAlign: "center",
     maxWidth: 200,
     lineHeight: 18,
@@ -787,7 +792,7 @@ const styles = StyleSheet.create({
   },
   resultItemSub: {
     fontFamily: "Inter_400Regular",
-    fontSize: 11,
+    fontSize: 12,
   },
   resultActions: {
     flexDirection: "row",
@@ -807,7 +812,7 @@ const styles = StyleSheet.create({
   },
   saveButtonText: {
     fontFamily: "Inter_500Medium",
-    fontSize: 12,
+    fontSize: 13,
     letterSpacing: 2,
     textTransform: "uppercase",
   },

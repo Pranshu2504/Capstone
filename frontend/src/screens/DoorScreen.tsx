@@ -329,7 +329,7 @@ const styles = StyleSheet.create({
   },
   dragHint: {
     fontFamily: "Inter_400Regular",
-    fontSize: 10,
+    fontSize: 12,
     letterSpacing: 2,
     textTransform: "uppercase",
   },
@@ -353,7 +353,7 @@ const styles = StyleSheet.create({
   },
   panelSubtitle: {
     fontFamily: "Inter_400Regular",
-    fontSize: 12,
+    fontSize: 13,
     letterSpacing: 2,
     textTransform: "uppercase",
     marginTop: -10,
@@ -371,7 +371,7 @@ const styles = StyleSheet.create({
   },
   feedbackText: {
     fontFamily: "Inter_400Regular",
-    fontSize: 12,
+    fontSize: 13,
     textAlign: "center",
     lineHeight: 17,
   },
@@ -384,7 +384,7 @@ const styles = StyleSheet.create({
   },
   enterButtonText: {
     fontFamily: "Inter_500Medium",
-    fontSize: 12,
+    fontSize: 13,
     letterSpacing: 3,
     textTransform: "uppercase",
   },
@@ -399,19 +399,19 @@ const styles = StyleSheet.create({
   },
   guestText: {
     fontFamily: "Inter_500Medium",
-    fontSize: 11,
+    fontSize: 12,
     letterSpacing: 2,
     textTransform: "uppercase",
   },
   guestHint: {
     fontFamily: "Inter_400Regular",
-    fontSize: 10,
+    fontSize: 12,
     letterSpacing: 0.2,
     textAlign: "center",
   },
   ghostLink: {
     fontFamily: "Inter_400Regular",
-    fontSize: 12,
+    fontSize: 13,
     textAlign: "center",
     lineHeight: 18,
   },

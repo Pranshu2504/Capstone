@@ -329,13 +329,13 @@ const styles = StyleSheet.create({
   },
   skipLink: {
     fontFamily: "Inter_400Regular",
-    fontSize: 12,
+    fontSize: 13,
     letterSpacing: 1,
     textDecorationLine: "underline",
   },
   stepLabel: {
     fontFamily: "Inter_400Regular",
-    fontSize: 12,
+    fontSize: 13,
     letterSpacing: 1,
   },
   progressBar: {
@@ -376,7 +376,7 @@ const styles = StyleSheet.create({
   },
   tileLabel: {
     fontFamily: "Inter_500Medium",
-    fontSize: 11,
+    fontSize: 12,
     letterSpacing: 2,
     textTransform: "uppercase",
     color: "#F5EDD6",
@@ -408,7 +408,7 @@ const styles = StyleSheet.create({
   },
   iconLabel: {
     fontFamily: "Inter_400Regular",
-    fontSize: 10,
+    fontSize: 12,
     letterSpacing: 1,
   },
   textInputArea: {
@@ -432,7 +432,7 @@ const styles = StyleSheet.create({
   },
   brandChipText: {
     fontFamily: "Inter_400Regular",
-    fontSize: 12,
+    fontSize: 13,
     letterSpacing: 0.5,
   },
   nextButton: {
@@ -445,7 +445,7 @@ const styles = StyleSheet.create({
   },
   nextButtonText: {
     fontFamily: "Inter_500Medium",
-    fontSize: 12,
+    fontSize: 13,
     letterSpacing: 2.5,
     textTransform: "uppercase",
   },
@@ -490,7 +490,7 @@ const styles = StyleSheet.create({
   },
   keywordText: {
     fontFamily: "Inter_500Medium",
-    fontSize: 11,
+    fontSize: 12,
     letterSpacing: 2,
     textTransform: "uppercase",
   },
@@ -509,7 +509,7 @@ const styles = StyleSheet.create({
   },
   enterBtnText: {
     fontFamily: "Inter_500Medium",
-    fontSize: 12,
+    fontSize: 13,
     letterSpacing: 2.5,
     textTransform: "uppercase",
   },

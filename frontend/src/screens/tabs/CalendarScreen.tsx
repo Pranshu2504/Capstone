@@ -7,13 +7,15 @@ import {
   Text,
   Platform,
   Modal,
+  Image,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import Feather from "react-native-vector-icons/Feather";
 import { useColors } from "@/hooks/useColors";
+import { useOutfitToday } from "@/api/hooks";
 import ReactNativeHapticFeedback from "react-native-haptic-feedback";
-import { SCREEN_WIDTH } from '@/constants/layout';
+import { SCREEN_WIDTH, FLOATING_CTA_CLEARANCE } from '@/constants/layout';
 
 const width = SCREEN_WIDTH;
 
@@ -45,11 +47,11 @@ const getDynamicWeekData = (now: Date) => {
   });
 };
 
-const TODAY_EVENTS = [
-  { title: "team standup", time: "10:00 am", type: "work", tag: "smart casual" },
-  { title: "lunch with priya", time: "1:00 pm", type: "social", tag: "casual fit" },
-  { title: "evening walk", time: "6:00 pm", type: "wellness", tag: null },
-];
+/**
+ * No events yet — there is no calendar integration, and inventing "lunch with
+ * priya" made the screen look like it knew a schedule it has no access to.
+ */
+const TODAY_EVENTS: { title: string; time: string; type: string; tag: string | null }[] = [];
 
 const EVENT_COLORS: Record<string, string> = {
   work: "#7070C0",
@@ -64,6 +66,7 @@ const MONTHS = [
 ];
 
 export default function CalendarScreen() {
+  const { data: outfitToday } = useOutfitToday();
   const colors = useColors();
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
@@ -150,7 +153,7 @@ export default function CalendarScreen() {
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: bottomPad + 100 }]}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: bottomPad + FLOATING_CTA_CLEARANCE }]}
       >
         {viewMode === "week" && (
           <>
@@ -255,17 +258,15 @@ export default function CalendarScreen() {
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.outfitStrip}
               >
-                {[
-                  { icon: "user", color: "#3A4A3A", label: "sage shirt" },
-                  { icon: "user", color: "#3A3A4A", label: "navy trousers" },
-                  { icon: "anchor", color: "#3A2A2A", label: "grey shoes" },
-                  { icon: "briefcase", color: "#2A2A2A", label: "tan bag" },
-                ].map((piece, i) => (
-                  <View key={i} style={styles.pieceTile}>
-                    <View style={[styles.pieceIcon, { backgroundColor: piece.color }]}>
-                      <Feather name={piece.icon as any} size={14} color="rgba(255,255,255,0.3)" />
-                    </View>
-                    <Text style={styles.pieceLabel}>{piece.label}</Text>
+                {/* The real pieces in today's outfit, if ZORA has picked one. */}
+                {(outfitToday?.itemDetails ?? []).map((piece) => (
+                  <View key={piece.id} style={styles.pieceTile}>
+                    {piece.image ? (
+                      <Image source={{ uri: piece.image }} style={styles.pieceIcon} resizeMode="cover" />
+                    ) : (
+                      <View style={[styles.pieceIcon, { backgroundColor: piece.color }]} />
+                    )}
+                    <Text style={styles.pieceLabel} numberOfLines={1}>{piece.name}</Text>
                   </View>
                 ))}
               </ScrollView>
@@ -478,7 +479,7 @@ const styles = StyleSheet.create({
   },
   togglePillText: {
     fontFamily: "Inter_400Regular",
-    fontSize: 11,
+    fontSize: 12,
     color: "#BBBBBB",
     letterSpacing: 0.5,
   },
@@ -497,7 +498,7 @@ const styles = StyleSheet.create({
   },
   weekdayLabel: {
     fontFamily: "Inter_400Regular",
-    fontSize: 10,
+    fontSize: 12,
     color: "#A3A3A3",
     width: (width - 40 - 24) / 7,
     textAlign: "center",
@@ -517,7 +518,7 @@ const styles = StyleSheet.create({
   },
   weekCellDate: {
     fontFamily: "Inter_500Medium",
-    fontSize: 12,
+    fontSize: 13,
     color: "#A3A3A3",
   },
   outfitSwatch: {
@@ -542,14 +543,14 @@ const styles = StyleSheet.create({
   },
   sectionLabel: {
     fontFamily: "Inter_400Regular",
-    fontSize: 10,
+    fontSize: 12,
     color: "#A3A3A3",
     letterSpacing: 1.5,
     textTransform: "uppercase",
   },
   shuffleLabel: {
     fontFamily: "Inter_500Medium",
-    fontSize: 10,
+    fontSize: 12,
     color: "#C9A84C",
     letterSpacing: 1,
     textTransform: "uppercase",
@@ -570,7 +571,7 @@ const styles = StyleSheet.create({
   },
   dayCardAbbr: {
     fontFamily: "Inter_400Regular",
-    fontSize: 11,
+    fontSize: 12,
     color: "#A3A3A3",
   },
   dayCardSwatch: {
@@ -613,7 +614,7 @@ const styles = StyleSheet.create({
   },
   detailSub: {
     fontFamily: "Inter_400Regular",
-    fontSize: 11,
+    fontSize: 12,
     color: "#A3A3A3",
   },
   weatherPill: {
@@ -629,12 +630,12 @@ const styles = StyleSheet.create({
   },
   weatherText: {
     fontFamily: "Inter_500Medium",
-    fontSize: 12,
+    fontSize: 13,
     color: "#E0D8CC",
   },
   weatherSub: {
     fontFamily: "Inter_400Regular",
-    fontSize: 10,
+    fontSize: 12,
     color: "#A3A3A3",
   },
   outfitStrip: {
@@ -660,7 +661,7 @@ const styles = StyleSheet.create({
   },
   pieceLabel: {
     fontFamily: "Inter_400Regular",
-    fontSize: 11,
+    fontSize: 12,
     color: "#A3A3A3",
     textAlign: "center",
   },
@@ -680,13 +681,13 @@ const styles = StyleSheet.create({
   },
   eventName: {
     fontFamily: "Inter_400Regular",
-    fontSize: 12,
+    fontSize: 13,
     color: "#CCCCCC",
     flex: 1,
   },
   eventTime: {
     fontFamily: "Inter_400Regular",
-    fontSize: 10,
+    fontSize: 12,
     color: "#A3A3A3",
   },
   eventTag: {
@@ -697,7 +698,7 @@ const styles = StyleSheet.create({
   },
   eventTagText: {
     fontFamily: "Inter_400Regular",
-    fontSize: 11,
+    fontSize: 12,
     color: "#C9A84C",
   },
   actionGrid: {
@@ -714,12 +715,12 @@ const styles = StyleSheet.create({
   },
   actionSolidLabel: {
     fontFamily: "Inter_500Medium",
-    fontSize: 11,
+    fontSize: 12,
     color: "#0A0A0A",
   },
   actionSolidSub: {
     fontFamily: "Inter_400Regular",
-    fontSize: 11,
+    fontSize: 12,
     color: "#5A4A1A",
   },
   actionGhost: {
@@ -734,12 +735,12 @@ const styles = StyleSheet.create({
   },
   actionGhostLabel: {
     fontFamily: "Inter_500Medium",
-    fontSize: 11,
+    fontSize: 12,
     color: "#C9A84C",
   },
   actionGhostSub: {
     fontFamily: "Inter_400Regular",
-    fontSize: 11,
+    fontSize: 12,
     color: "#A3A3A3",
   },
   shuffleCard: {
@@ -773,7 +774,7 @@ const styles = StyleSheet.create({
   },
   shuffleSub: {
     fontFamily: "Inter_400Regular",
-    fontSize: 10,
+    fontSize: 12,
     color: "#A3A3A3",
   },
   shuffleArrow: {
@@ -797,7 +798,7 @@ const styles = StyleSheet.create({
   },
   monthCellText: {
     fontFamily: "Inter_400Regular",
-    fontSize: 10,
+    fontSize: 12,
     color: "#A3A3A3",
   },
   monthDot: {
@@ -836,7 +837,7 @@ const styles = StyleSheet.create({
   },
   recapWeek: {
     fontFamily: "Inter_400Regular",
-    fontSize: 11,
+    fontSize: 12,
     color: "#A3A3A3",
   },
   overviewContainer: {
@@ -859,7 +860,7 @@ const styles = StyleSheet.create({
   },
   overviewStatLabel: {
     fontFamily: "Inter_400Regular",
-    fontSize: 12,
+    fontSize: 13,
     color: "#A3A3A3",
     letterSpacing: 0.5,
   },
@@ -913,13 +914,13 @@ const styles = StyleSheet.create({
   },
   buildOptionLabel: {
     fontFamily: "Inter_500Medium",
-    fontSize: 11,
+    fontSize: 12,
     color: "#E0D8CC",
     textAlign: "center",
   },
   buildOptionSub: {
     fontFamily: "Inter_400Regular",
-    fontSize: 11,
+    fontSize: 12,
     color: "#A3A3A3",
     textAlign: "center",
   },

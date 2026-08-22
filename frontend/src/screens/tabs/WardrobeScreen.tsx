@@ -19,6 +19,7 @@ import { useColors } from '@/hooks/useColors';
 import { pickImage, pickImages, type PickSource } from '@/utils/pickImage';
 import { useOutfits, useUploadGarments, useWardrobe } from '@/api/hooks';
 import type { ApiWardrobeItem } from '@/api/types';
+import { FLOATING_CTA_CLEARANCE } from '@/constants/layout';
 
 // Design elements that should stay "woody" or specific to the closet vibe
 const getWoodTone = (theme: 'light' | 'dark') => ({
@@ -74,8 +75,8 @@ const sh = StyleSheet.create({
   row:    { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 4, paddingTop: 22, paddingBottom: 10 },
   accent: { width: 2, height: 12, marginRight: 6 },
   title:  { fontFamily: 'Inter_500Medium', fontSize: 13, letterSpacing: 0.55, flex: 1 },
-  count:  { fontFamily: 'Inter_400Regular', fontSize: 12, color: '#999999', marginRight: 8 },
-  seeAll: { fontFamily: 'Inter_400Regular', fontSize: 12 },
+  count:  { fontFamily: 'Inter_400Regular', fontSize: 13, color: '#999999', marginRight: 8 },
+  seeAll: { fontFamily: 'Inter_400Regular', fontSize: 13 },
 });
 
 function RailCard({ children, showRod = true }: { children: React.ReactNode; showRod?: boolean }) {
@@ -142,9 +143,9 @@ const hng = StyleSheet.create({
   card:          { width: 88, height: 106, borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 0.5, borderColor: 'transparent', overflow: 'hidden' },
   cardWarn:      { borderColor: '#3A1A1A' },
   badge:         { position: 'absolute', top: 5, right: 5, backgroundColor: 'rgba(10,10,10,0.6)', borderRadius: 5, paddingHorizontal: 4, paddingVertical: 1 },
-  badgeText:     { fontSize: 11, fontFamily: 'Inter_400Regular' },
-  name:          { fontFamily: 'Inter_400Regular', fontSize: 11, color: '#BBBBBB', marginTop: 5, maxWidth: 80, textAlign: 'center' },
-  cat:           { fontFamily: 'Inter_400Regular', fontSize: 11, color: '#BBBBBB', marginTop: 1 },
+  badgeText:     { fontSize: 12, fontFamily: 'Inter_400Regular' },
+  name:          { fontFamily: 'Inter_400Regular', fontSize: 12, color: '#BBBBBB', marginTop: 5, maxWidth: 80, textAlign: 'center' },
+  cat:           { fontFamily: 'Inter_400Regular', fontSize: 12, color: '#BBBBBB', marginTop: 1 },
 });
 
 function ShelfCard({ children }: { children: React.ReactNode }) {
@@ -199,8 +200,8 @@ const fi = StyleSheet.create({
   linesArea: { paddingHorizontal: 10, gap: 7 },
   line:      { height: 2, backgroundColor: 'rgba(255,255,255,0.9)', borderRadius: 1 },
   badge:     { position: 'absolute', bottom: 6, right: 7, backgroundColor: 'rgba(10,10,10,0.55)', borderRadius: 5, paddingHorizontal: 5, paddingVertical: 1 },
-  badgeText: { fontSize: 11, fontFamily: 'Inter_400Regular' },
-  name:      { fontFamily: 'Inter_400Regular', fontSize: 11, color: '#BBBBBB', marginTop: 6, maxWidth: 80, textAlign: 'center' },
+  badgeText: { fontSize: 12, fontFamily: 'Inter_400Regular' },
+  name:      { fontFamily: 'Inter_400Regular', fontSize: 12, color: '#BBBBBB', marginTop: 6, maxWidth: 80, textAlign: 'center' },
 });
 
 /** Stands in for a rail with nothing on it — honest about the gap. */
@@ -222,7 +223,7 @@ const er = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
   },
-  text: { fontFamily: 'Inter_400Regular', fontSize: 12, letterSpacing: 0.3 },
+  text: { fontFamily: 'Inter_400Regular', fontSize: 13, letterSpacing: 0.3 },
 });
 
 function RackCard({ children }: { children: React.ReactNode }) {
@@ -266,9 +267,9 @@ const oc = StyleSheet.create({
   card:     { width: 108, borderRadius: 12, borderWidth: 0.5, overflow: 'hidden' },
   mosaic:   { flexDirection: 'row', flexWrap: 'wrap', gap: 2, padding: 6, height: 86 },
   piece:    { width: '47%', flex: 1, minHeight: 36, borderRadius: 4, alignItems: 'center', justifyContent: 'center' },
-  name:     { fontFamily: 'Inter_500Medium', fontSize: 12, paddingHorizontal: 8, paddingTop: 6 },
-  wears:    { fontFamily: 'Inter_400Regular', fontSize: 11, paddingHorizontal: 8, paddingTop: 2 },
-  occasion: { fontFamily: 'Inter_400Regular', fontSize: 11, paddingHorizontal: 8, paddingBottom: 8, paddingTop: 1 },
+  name:     { fontFamily: 'Inter_500Medium', fontSize: 13, paddingHorizontal: 8, paddingTop: 6 },
+  wears:    { fontFamily: 'Inter_400Regular', fontSize: 12, paddingHorizontal: 8, paddingTop: 2 },
+  occasion: { fontFamily: 'Inter_400Regular', fontSize: 12, paddingHorizontal: 8, paddingBottom: 8, paddingTop: 1 },
 });
 
 // ─── Main Screen ─────────────────────────────────────────────────────────────
@@ -555,19 +556,19 @@ const s = StyleSheet.create({
 
   // Header bar
   headerBar:    { height: 36, backgroundColor: '#1A1208', borderBottomWidth: 2, borderBottomColor: '#2A1E0A', flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14 },
-  headerTitle:  { fontFamily: 'Inter_400Regular', fontSize: 12, color: '#C9A84C', letterSpacing: 1.5, flex: 1 },
+  headerTitle:  { fontFamily: 'Inter_400Regular', fontSize: 13, color: '#C9A84C', letterSpacing: 1.5, flex: 1 },
   headerIcons:  { flexDirection: 'row', gap: 6 },
   iconBtn:      { width: 24, height: 24, borderRadius: 12, backgroundColor: '#1F1208', borderWidth: 0.5, borderColor: 'rgba(201,168,76,0.2)', alignItems: 'center', justifyContent: 'center' },
 
   // Scroll
-  scroll: { paddingHorizontal: 12, paddingBottom: 120, gap: 0 },
+  scroll: { paddingHorizontal: 12, paddingBottom: FLOATING_CTA_CLEARANCE, gap: 0 },
 
   // Accessories
   accessCard:         { backgroundColor: '#0D0A06', borderRadius: 14, borderWidth: 0.5, borderColor: '#222222', padding: 14 },
   accessGrid:         { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   accessCell:         { width: '22%', flex: 1, aspectRatio: 1, backgroundColor: '#161616', borderRadius: 10, borderWidth: 0.5, borderColor: '#1E1608', alignItems: 'center', justifyContent: 'center', gap: 3 },
   accessCellFeatured: { backgroundColor: '#1A1208', borderColor: 'rgba(201,168,76,0.27)' },
-  accessLabel:        { fontFamily: 'Inter_400Regular', fontSize: 11, color: '#999999', textAlign: 'center' },
+  accessLabel:        { fontFamily: 'Inter_400Regular', fontSize: 12, color: '#999999', textAlign: 'center' },
   accessLabelFeatured:{ color: '#C9A84C' },
 
   // Outfits
@@ -583,26 +584,26 @@ const s = StyleSheet.create({
   detailName:   { fontFamily: 'PlayfairDisplay_700Bold', fontSize: 15, color: '#F0ECE4' },
   tagsRow:      { flexDirection: 'row', flexWrap: 'wrap', gap: 4 },
   tagGold:      { backgroundColor: '#1F1A0D', borderWidth: 0.5, borderColor: 'rgba(201,168,76,0.27)', borderRadius: 10, paddingHorizontal: 6, paddingVertical: 2 },
-  tagGoldText:  { fontFamily: 'Inter_400Regular', fontSize: 11, color: '#C9A84C' },
+  tagGoldText:  { fontFamily: 'Inter_400Regular', fontSize: 12, color: '#C9A84C' },
   tag:          { backgroundColor: '#1E1608', borderWidth: 0.5, borderColor: '#222222', borderRadius: 10, paddingHorizontal: 6, paddingVertical: 2 },
-  tagText:      { fontFamily: 'Inter_400Regular', fontSize: 11, color: '#BBBBBB' },
-  wearsLabel:   { fontFamily: 'Inter_400Regular', fontSize: 12, color: '#999999', marginTop: 2 },
+  tagText:      { fontFamily: 'Inter_400Regular', fontSize: 12, color: '#BBBBBB' },
+  wearsLabel:   { fontFamily: 'Inter_400Regular', fontSize: 13, color: '#999999', marginTop: 2 },
   dotsRow:      { flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 2 },
   dot:          { width: 7, height: 7, borderRadius: 3.5 },
   actionRow:    { flexDirection: 'row', gap: 6 },
   btnTryOn:     { flex: 1, borderRadius: 9, paddingVertical: 8, alignItems: 'center' },
-  btnTryOnText: { fontFamily: 'Inter_500Medium', fontSize: 12, color: '#0A0A0A' },
+  btnTryOnText: { fontFamily: 'Inter_500Medium', fontSize: 13, color: '#0A0A0A' },
   btnPair:      { flex: 1, borderWidth: 0.5, borderRadius: 9, paddingVertical: 8, alignItems: 'center' },
-  btnPairText:  { fontFamily: 'Inter_500Medium', fontSize: 12 },
+  btnPairText:  { fontFamily: 'Inter_500Medium', fontSize: 13 },
   btnRemove:    { flex: 1, borderWidth: 0.5, borderRadius: 9, paddingVertical: 8, alignItems: 'center' },
-  btnRemoveText:{ fontFamily: 'Inter_500Medium', fontSize: 12 },
+  btnRemoveText:{ fontFamily: 'Inter_500Medium', fontSize: 13 },
 
   // Add strip
   addStrip:           { flexDirection: 'row', gap: 8, marginTop: 12 },
   addCardPrimary:     { flex: 1, borderRadius: 12, paddingVertical: 10, paddingHorizontal: 6, alignItems: 'center', gap: 4 },
-  addCardPrimaryText: { fontFamily: 'Inter_500Medium', fontSize: 12 },
+  addCardPrimaryText: { fontFamily: 'Inter_500Medium', fontSize: 13 },
   addCardSecondary:   { flex: 1, borderWidth: 0.5, borderRadius: 12, paddingVertical: 10, paddingHorizontal: 6, alignItems: 'center', gap: 4 },
-  addCardSecondaryText:{ fontFamily: 'Inter_400Regular', fontSize: 12 },
+  addCardSecondaryText:{ fontFamily: 'Inter_400Regular', fontSize: 13 },
   
   // Modals
   modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)' },
