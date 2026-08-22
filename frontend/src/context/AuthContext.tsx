@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 
-import { api, setAuthTokenGetter } from '@/api/client';
+import { api, setAuthTokenGetter, warmUpApi } from '@/api/client';
 import { supabase } from '@/lib/supabaseClient';
 
 interface AuthContextType {
@@ -32,6 +32,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [session]);
 
   useEffect(() => {
+    // The API sleeps when idle and takes ~25s to wake. Poking it as the app
+    // opens means the first thing the user actually does — loading a
+    // wardrobe, uploading a photo — is not the request that pays for it.
+    warmUpApi();
+
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
       setIsLoaded(true);

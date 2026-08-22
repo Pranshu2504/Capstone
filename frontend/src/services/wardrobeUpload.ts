@@ -33,20 +33,45 @@ async function appendImage(form: FormData, image: PickedImage): Promise<void> {
  * to a normal request — show a spinner and expect a few seconds per photo.
  */
 export async function uploadGarmentPhotos(images: PickedImage[]): Promise<ApiWardrobeItem[]> {
-  const form = new FormData();
-  for (const image of images) await appendImage(form, image);
-
   const token = getAuthToken();
 
-  // Content-Type is deliberately unset so the runtime adds the multipart boundary.
-  const response = await fetch(`${API_BASE_URL}/api/wardrobe/upload`, {
-    method: 'POST',
-    body: form,
-    headers: {
-      Accept: 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-  });
+  // Rebuilt per attempt rather than reused: a FormData handed to a fetch that
+  // failed mid-flight has had its body read, and re-sending the same object
+  // is not reliably supported.
+  const send = async () => {
+    const form = new FormData();
+    for (const image of images) await appendImage(form, image);
+
+    // Content-Type is deliberately unset so the runtime adds the multipart boundary.
+    return fetch(`${API_BASE_URL}/api/wardrobe/upload`, {
+      method: 'POST',
+      body: form,
+      headers: {
+        Accept: 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    });
+  };
+
+  /*
+   * One retry, for the same reason the JSON client has them: the API sleeps
+   * when idle and takes ~25s to wake, and an upload is often the first thing
+   * touched after a pause. Only a network-level failure retries — re-sending
+   * a batch the server actually rejected would just spend vision calls again.
+   */
+  let response: Response;
+  try {
+    response = await send();
+  } catch {
+    await new Promise((r) => setTimeout(r, 5000));
+    try {
+      response = await send();
+    } catch (cause) {
+      throw new Error(
+        'Could not reach ZORA to upload. The server may be waking up — try again in a moment.',
+      );
+    }
+  }
 
   if (!response.ok) {
     const payload = await response.json().catch(() => null);
