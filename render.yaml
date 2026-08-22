@@ -16,14 +16,37 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      # Supabase Postgres — the same project that serves auth and the photo
+      # bucket, so the app has one database rather than pointing at two.
+      # Must be the SESSION-mode pooler (5432): transaction mode (6543)
+      # cannot run the `prisma migrate deploy` in the build step.
+      # Note the region gap — this service is in Oregon and the database is
+      # in ap-southeast-1, so every query crosses the Pacific.
       - key: DATABASE_URL
-        fromDatabase:
-          name: zora-db
-          property: connectionString
+        sync: false
       # Set this to the Vercel production URL after the frontend is deployed.
       # Vercel *.vercel.app preview origins are already allowed in code.
       - key: CORS_ORIGIN
         sync: false
+
+      # ── Auth + storage (Supabase) ─────────────────────────────────────────
+      # Service-role key: server-only, bypasses row-level security.
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+
+      # ── Stylist (Google Gemini) ───────────────────────────────────────────
+      # Without a key, uploads skip the vision pass and recommendations fall
+      # back to deterministic scoring — both still work.
+      - key: GEMINI_API_KEY
+        sync: false
+      # Not the newest model on purpose: gemini-3.7-flash returned 503 on
+      # every call under load, so each request paid a failed round trip before
+      # the fallback answered. That alone took an upload of four photos from
+      # 5.9s to 76s.
+      - key: GEMINI_MODEL
+        value: gemini-3.5-flash
 
       # ── Virtual try-on (FASHN) ────────────────────────────────────────────
       # Served by this same service, so the frontend needs only one API URL.
@@ -42,9 +65,6 @@ services:
       - key: PERSIST_OUTPUTS
         value: "false"
 
-databases:
-  - name: zora-db
-    plan: free
-    region: oregon
-    databaseName: zora
-    user: zora
+# No `databases:` block any more — the app uses Supabase Postgres, declared
+# through DATABASE_URL above. The old `zora-db` instance can be deleted once
+# nothing points at it; note that its contents do not come along.
