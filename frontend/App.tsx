@@ -10,6 +10,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Feather from 'react-native-vector-icons/Feather';
 
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { ApiBootGate } from '@/components/ApiBootGate';
 import { useColors } from '@/hooks/useColors';
 import { AuthProvider } from '@/context/AuthContext';
 import { ThemeProvider, useTheme } from '@/context/ThemeContext';
@@ -136,6 +137,7 @@ function AppContent() {
   return (
     <SafeAreaProvider>
       <ErrorBoundary>
+        <ApiBootGate>
         <QueryClientProvider client={queryClient}>
           <GestureHandlerRootView style={{ flex: 1 }}>
             <KeyboardProvider>
@@ -154,6 +156,7 @@ function AppContent() {
             </KeyboardProvider>
           </GestureHandlerRootView>
         </QueryClientProvider>
+        </ApiBootGate>
       </ErrorBoundary>
     </SafeAreaProvider>
   );

@@ -2,6 +2,7 @@ import { API_BASE_URL } from '@/config/api';
 import { getAuthToken } from '@/api/client';
 import type { ApiWardrobeItem } from '@/api/types';
 import type { PickedImage } from '@/utils/pickImage';
+import { resilientFetch } from '@/api/resilientFetch';
 
 /**
  * Multipart upload of garment photos.
@@ -35,42 +36,37 @@ async function appendImage(form: FormData, image: PickedImage): Promise<void> {
 export async function uploadGarmentPhotos(images: PickedImage[]): Promise<ApiWardrobeItem[]> {
   const token = getAuthToken();
 
-  // Rebuilt per attempt rather than reused: a FormData handed to a fetch that
-  // failed mid-flight has had its body read, and re-sending the same object
-  // is not reliably supported.
-  const send = async () => {
-    const form = new FormData();
-    for (const image of images) await appendImage(form, image);
-
-    // Content-Type is deliberately unset so the runtime adds the multipart boundary.
-    return fetch(`${API_BASE_URL}/api/wardrobe/upload`, {
-      method: 'POST',
-      body: form,
-      headers: {
-        Accept: 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
-    });
-  };
-
   /*
-   * One retry, for the same reason the JSON client has them: the API sleeps
-   * when idle and takes ~25s to wake, and an upload is often the first thing
-   * touched after a pause. Only a network-level failure retries — re-sending
-   * a batch the server actually rejected would just spend vision calls again.
+   * Uploads get a longer per-attempt window than a normal request: several
+   * photos are being sent and each is read by a vision pass server-side, so
+   * twenty seconds would abandon work that was progressing fine.
+   *
+   * The form is rebuilt per attempt — one handed to a fetch that failed
+   * mid-flight has had its body read.
    */
   let response: Response;
   try {
-    response = await send();
+    response = await resilientFetch(
+      `${API_BASE_URL}/api/wardrobe/upload`,
+      async () => {
+        const form = new FormData();
+        for (const image of images) await appendImage(form, image);
+        return {
+          method: 'POST',
+          body: form,
+          // Content-Type is deliberately unset so the runtime adds the boundary.
+          headers: {
+            Accept: 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+        };
+      },
+      { attemptTimeoutMs: 120_000, totalBudgetMs: 300_000 },
+    );
   } catch {
-    await new Promise((r) => setTimeout(r, 5000));
-    try {
-      response = await send();
-    } catch (cause) {
-      throw new Error(
-        'Could not reach ZORA to upload. The server may be waking up — try again in a moment.',
-      );
-    }
+    throw new Error(
+      'Could not reach ZORA to upload. The server may be waking up — try again in a moment.',
+    );
   }
 
   if (!response.ok) {

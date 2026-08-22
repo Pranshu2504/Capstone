@@ -1,4 +1,5 @@
 import { API_BASE_URL } from '@/config/api';
+import { NetworkUnreachableError, resilientFetch } from './resilientFetch';
 
 // Set by AuthContext whenever the Supabase session changes. A plain module
 // closure avoids a circular import between api/client.ts and context/AuthContext.tsx.
@@ -22,24 +23,10 @@ export class ApiError extends Error {
   }
 }
 
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
-/**
- * The API sleeps when idle and takes ~25s to wake.
- *
- * Render's free tier spins a service down after about fifteen minutes of
- * inactivity. The first request afterwards hangs until the container boots,
- * and the browser aborts it long before that — which surfaces as a bare
- * "Failed to fetch" with nothing to act on. Retrying rides out the wake-up
- * instead of reporting the app as broken.
- */
-const COLD_START_RETRIES = 2;
-const COLD_START_BACKOFF_MS = 4000;
-
 /** Warms the API so the next real request does not pay the wake-up cost. */
 export function warmUpApi(): void {
   void fetch(`${API_BASE_URL}/health`).catch(() => {
-    /* Best effort — the retry below covers a failure here. */
+    /* Best effort — every request retries on its own anyway. */
   });
 }
 
@@ -47,37 +34,30 @@ export function warmUpApi(): void {
 export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
   const url = `${API_BASE_URL}${path.startsWith('/') ? path : `/${path}`}`;
 
-  const token = getAuthToken();
-
-  const send = () =>
-    fetch(url, {
-      ...init,
-      headers: {
-        Accept: 'application/json',
-        ...(init.body ? { 'Content-Type': 'application/json' } : {}),
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        ...init.headers,
-      },
-    });
-
   let response: Response;
-  let lastCause: unknown;
-  for (let attempt = 0; ; attempt += 1) {
-    try {
-      response = await send();
-      break;
-    } catch (cause) {
-      lastCause = cause;
-      // Only a network-level failure retries. A 4xx is an answer, not a nap.
-      if (attempt >= COLD_START_RETRIES) {
-        throw new ApiError(
-          0,
-          'Could not reach ZORA. The server may be waking up — try again in a moment.',
-          lastCause,
-        );
-      }
-      await sleep(COLD_START_BACKOFF_MS * (attempt + 1));
-    }
+  try {
+    // Token is read per attempt: a cold start can outlast a refresh, and a
+    // retry carrying the old bearer would 401 for the wrong reason.
+    response = await resilientFetch(url, () => {
+      const token = getAuthToken();
+      return {
+        ...init,
+        headers: {
+          Accept: 'application/json',
+          ...(init.body ? { 'Content-Type': 'application/json' } : {}),
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...init.headers,
+        },
+      };
+    });
+  } catch (cause) {
+    throw new ApiError(
+      0,
+      cause instanceof NetworkUnreachableError
+        ? cause.message
+        : `Cannot reach the ZORA API at ${API_BASE_URL}`,
+      cause,
+    );
   }
 
   if (response.status === 204) return undefined as T;

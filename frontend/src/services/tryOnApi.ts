@@ -10,6 +10,7 @@
  */
 
 import { AI_BASE_URL } from '@/config/aiApi';
+import { resilientFetch } from '@/api/resilientFetch';
 import type { PickedImage } from '@/utils/pickImage';
 
 export type JobStatus = 'queued' | 'processing' | 'completed' | 'failed' | 'timeout';
@@ -120,18 +121,26 @@ export async function submitTryOn(
   garmentImage: PickedImage,
   options: TryOnOptions = {},
 ): Promise<TryOnJob> {
-  const form = new FormData();
-  await appendImage(form, 'model_image', personImage);
-  await appendImage(form, 'garment_image', garmentImage);
+  // Rebuilt per attempt: a form already read by a failed fetch cannot be resent.
+  const buildForm = async () => {
+    const form = new FormData();
+    await appendImage(form, 'model_image', personImage);
+    await appendImage(form, 'garment_image', garmentImage);
 
-  form.append('model', 'tryon-v1.6');
-  form.append('category', options.category ?? 'auto');
-  form.append('mode', options.mode ?? 'performance');
-  form.append('garment_photo_type', options.garmentPhotoType ?? 'auto');
-  form.append('num_samples', String(options.numSamples ?? 1));
+    form.append('model', 'tryon-v1.6');
+    form.append('category', options.category ?? 'auto');
+    form.append('mode', options.mode ?? 'performance');
+    form.append('garment_photo_type', options.garmentPhotoType ?? 'auto');
+    form.append('num_samples', String(options.numSamples ?? 1));
 
-  // Content-Type is deliberately unset so the runtime adds the multipart boundary.
-  const response = await fetch(`${AI_BASE_URL}/api/tryon`, { method: 'POST', body: form });
+    // Content-Type is deliberately unset so the runtime adds the boundary.
+    return { method: 'POST', body: form };
+  };
+
+  const response = await resilientFetch(`${AI_BASE_URL}/api/tryon`, buildForm, {
+    attemptTimeoutMs: 120_000,
+    totalBudgetMs: 300_000,
+  });
 
   if (!response.ok) throw await parseError(response);
 
@@ -140,7 +149,8 @@ export async function submitTryOn(
 
 /** Fetch the current state of a job. */
 export async function getTryOnJob(jobId: string): Promise<TryOnJob> {
-  const response = await fetch(`${AI_BASE_URL}/api/tryon/${jobId}`);
+  // Polling rides out a hiccup rather than failing the whole job.
+  const response = await resilientFetch(`${AI_BASE_URL}/api/tryon/${jobId}`, () => ({}));
   if (!response.ok) throw await parseError(response);
   return normalizeJob(await response.json());
 }
@@ -221,16 +231,23 @@ export async function submitTryOnChain(
   garments: ChainGarment[],
   options: TryOnOptions = {},
 ): Promise<TryOnJob> {
-  const form = new FormData();
-  await appendImage(form, 'model_image', personImage);
+  const buildForm = async () => {
+    const form = new FormData();
+    await appendImage(form, 'model_image', personImage);
 
-  form.append('garments', JSON.stringify(garments));
-  form.append('model', 'tryon-v1.6');
-  form.append('mode', options.mode ?? 'performance');
-  form.append('garment_photo_type', options.garmentPhotoType ?? 'auto');
-  form.append('num_samples', String(options.numSamples ?? 1));
+    form.append('garments', JSON.stringify(garments));
+    form.append('model', 'tryon-v1.6');
+    form.append('mode', options.mode ?? 'performance');
+    form.append('garment_photo_type', options.garmentPhotoType ?? 'auto');
+    form.append('num_samples', String(options.numSamples ?? 1));
 
-  const response = await fetch(`${AI_BASE_URL}/api/tryon/chain`, { method: 'POST', body: form });
+    return { method: 'POST', body: form };
+  };
+
+  const response = await resilientFetch(`${AI_BASE_URL}/api/tryon/chain`, buildForm, {
+    attemptTimeoutMs: 120_000,
+    totalBudgetMs: 300_000,
+  });
   if (!response.ok) throw await parseError(response);
 
   return normalizeJob(await response.json());
