@@ -1,3 +1,4 @@
+import path from 'node:path';
 import cors from 'cors';
 import express, { type NextFunction, type Request, type Response } from 'express';
 import morgan from 'morgan';
@@ -66,6 +67,8 @@ app.use('/api', discoverRouter);
 // Virtual try-on (FASHN). Ported from the standalone `ai/` service so a single
 // deployment serves both halves of the API. Mounted last so its catch-all
 // error handler cannot shadow the wardrobe routes.
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+
 if (tryOnEnv.PERSIST_OUTPUTS) {
   app.use(
     '/static',
