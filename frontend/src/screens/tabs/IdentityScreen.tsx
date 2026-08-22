@@ -20,6 +20,7 @@ import Animated, {
   interpolateColor 
 } from "react-native-reanimated";
 import { useUser, useWardrobe } from "@/api/hooks";
+import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import { useColors } from "@/hooks/useColors";
 import { SCREEN_WIDTH, FLOATING_CTA_CLEARANCE } from '@/constants/layout';
@@ -90,6 +91,7 @@ export default function IdentityScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
   const colors = useColors();
+  const { signOut } = useAuth();
   const { data: user } = useUser();
   const { data: wardrobe } = useWardrobe();
   const { theme, setTheme } = useTheme();
@@ -97,6 +99,12 @@ export default function IdentityScreen() {
   const [settingsData, setSettingsData] = useState(INITIAL_SETTINGS);
   const [isLinking, setIsLinking] = useState(false);
   const [linkSuccess, setLinkSuccess] = useState(false);
+
+  const handleSignOut = async () => {
+    ReactNativeHapticFeedback.trigger("impactMedium");
+    await signOut();
+    navigation.reset({ index: 0, routes: [{ name: "Door" }] });
+  };
 
   const handleLinkAccount = () => {
     if (!settingsModal) return;
@@ -439,6 +447,25 @@ export default function IdentityScreen() {
                 <Feather name="chevron-right" size={13} color={colors.mutedForeground} style={{ marginLeft: "auto" }} />
               </TouchableOpacity>
             ))}
+
+            <TouchableOpacity
+              onPress={handleSignOut}
+              style={[
+                styles.settingsTile,
+                {
+                  backgroundColor: colors.card,
+                  borderColor: 'rgba(229,132,63,0.3)',
+                  marginTop: 6,
+                },
+              ]}
+              activeOpacity={0.8}
+            >
+              <View style={[styles.settingsTileIcon, { backgroundColor: 'rgba(229,132,63,0.12)', borderColor: 'rgba(229,132,63,0.3)' }]}>
+                <Feather name="log-out" size={16} color="#E5843F" />
+              </View>
+              <Text style={[styles.settingsTileLabel, { color: "#E5843F", fontWeight: "600" }]}>Log Out</Text>
+              <Feather name="chevron-right" size={13} color="#E5843F" style={{ marginLeft: "auto" }} />
+            </TouchableOpacity>
           </View>
         </View>
       </ScrollView>
