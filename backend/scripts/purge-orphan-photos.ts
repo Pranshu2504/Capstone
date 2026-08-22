@@ -20,6 +20,17 @@ import { supabaseAdmin } from '../src/lib/supabaseAdmin.js';
 
 const DELETE = process.argv.includes('--delete');
 
+/**
+ * An "orphan" is only orphaned relative to the database this process is
+ * pointed at. Deleting on that basis destroyed six real garment photos once:
+ * they were referenced by a second deployment running against its own
+ * database, which this script could not see and did not think to ask about.
+ *
+ * So deletion now requires saying out loud that no other environment shares
+ * the bucket. Reporting stays free.
+ */
+const CONFIRMED_SOLE_DATABASE = process.argv.includes('--only-database');
+
 async function listAllObjects(): Promise<string[]> {
   if (!supabaseAdmin) throw new Error('Supabase is not configured.');
 
@@ -80,7 +91,20 @@ async function main(): Promise<void> {
   for (const p of orphans) console.log(`  - ${p}`);
 
   if (!DELETE) {
-    console.log('\nDry run. Re-run with --delete to remove these.');
+    console.log('\nDry run. Re-run with --delete --only-database to remove these.');
+    return;
+  }
+
+  if (!CONFIRMED_SOLE_DATABASE) {
+    console.error(
+      '\nRefusing to delete.\n\n' +
+        'These are only orphans if no OTHER deployment writes to this bucket.\n' +
+        `This process is pointed at:\n  ${(process.env.DATABASE_URL ?? '(unset)').replace(/:[^:@/]*@/, ':****@')}\n\n` +
+        'Check every environment sharing the bucket — a staging or production\n' +
+        'service on its own database will reference files this one cannot see.\n' +
+        'Then re-run with --delete --only-database.',
+    );
+    process.exitCode = 1;
     return;
   }
 
