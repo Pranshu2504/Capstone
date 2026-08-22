@@ -46,7 +46,7 @@ export const queryKeys = {
 // Fixtures are already API-shaped apart from these two fields.
 const FALLBACK_USER: ApiUser = { id: 'mock-user', ...MOCK_USER };
 
-const FALLBACK_ITEMS: ApiWardrobeItem[] = MOCK_WARDROBE_ITEMS.map((item) => ({ ...item }));
+const FALLBACK_ITEMS: ApiWardrobeItem[] = [];
 
 const FALLBACK_OUTFIT: ApiOutfit = {
   id: 'mock-outfit',
@@ -55,8 +55,8 @@ const FALLBACK_OUTFIT: ApiOutfit = {
   occasion: MOCK_OUTFIT_TODAY.occasion,
   reasoning: MOCK_OUTFIT_TODAY.reasoning,
   date: new Date().toISOString().slice(0, 10),
-  items: MOCK_OUTFIT_TODAY.items,
-  itemDetails: FALLBACK_ITEMS.filter((i) => MOCK_OUTFIT_TODAY.items.includes(i.name)),
+  items: [],
+  itemDetails: [],
 };
 
 const FALLBACK_CALENDAR: ApiCalendar = {

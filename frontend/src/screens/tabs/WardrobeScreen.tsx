@@ -283,16 +283,20 @@ export default function WardrobeScreen() {
   const { data: wardrobe } = useWardrobe();
   const { data: outfits } = useOutfits();
 
-  const inCategory = (...names: string[]) =>
-    wardrobe.filter((i) => names.includes(i.category.toLowerCase()));
+  const categorize = (item: ApiWardrobeItem): 'tops' | 'bottoms' | 'dresses' => {
+    const cat = (item.category || '').toLowerCase();
+    if (['bottoms', 'bottom', 'pants', 'trousers', 'jeans', 'shorts', 'skirt', 'skirts'].some((k) => cat.includes(k))) {
+      return 'bottoms';
+    }
+    if (['dresses', 'dress', 'ethnic', 'gown', 'jumpsuit', 'saree', 'kurta', 'suit'].some((k) => cat.includes(k))) {
+      return 'dresses';
+    }
+    return 'tops';
+  };
 
-  const tops = inCategory('tops');
-  const dresses = inCategory('dresses');
-  const bottoms = inCategory('bottoms');
-  const outerwear = inCategory('outerwear');
-  const everythingElse = wardrobe.filter(
-    (i) => !['tops', 'dresses', 'bottoms', 'outerwear'].includes(i.category.toLowerCase()),
-  );
+  const tops = wardrobe.filter((i) => categorize(i) === 'tops');
+  const bottoms = wardrobe.filter((i) => categorize(i) === 'bottoms');
+  const dresses = wardrobe.filter((i) => categorize(i) === 'dresses');
 
   const openItem = (item: ApiWardrobeItem, displayType: 'hanger' | 'folded') =>
     navigation.navigate('ClothingCategory', {
@@ -421,22 +425,6 @@ export default function WardrobeScreen() {
           <EmptyRail label="no tops yet" />
         )}
 
-        <SectionHeader title="Dresses & Ethnic" count={dresses.length} />
-        {dresses.length ? (
-          <RailCard>
-            {dresses.map((item) => (
-              <HangerItem
-                key={item.id}
-                {...toRailItem(item)}
-                isDress
-                onPress={() => openItem(item, 'hanger')}
-              />
-            ))}
-          </RailCard>
-        ) : (
-          <EmptyRail label="no dresses yet" />
-        )}
-
         <SectionHeader title="Bottoms" count={bottoms.length} />
         {bottoms.length ? (
           <ShelfCard>
@@ -452,34 +440,20 @@ export default function WardrobeScreen() {
           <EmptyRail label="no bottoms yet" />
         )}
 
-        {!!outerwear.length && (
-          <>
-            <SectionHeader title="Outerwear" count={outerwear.length} />
-            <RailCard>
-              {outerwear.map((item) => (
-                <HangerItem
-                  key={item.id}
-                  {...toRailItem(item)}
-                  onPress={() => openItem(item, 'hanger')}
-                />
-              ))}
-            </RailCard>
-          </>
-        )}
-
-        {!!everythingElse.length && (
-          <>
-            <SectionHeader title="Shoes & Accessories" count={everythingElse.length} />
-            <ShelfCard>
-              {everythingElse.map((item) => (
-                <FoldedItem
-                  key={item.id}
-                  {...toRailItem(item)}
-                  onPress={() => openItem(item, 'folded')}
-                />
-              ))}
-            </ShelfCard>
-          </>
+        <SectionHeader title="Dresses & Suits" count={dresses.length} />
+        {dresses.length ? (
+          <RailCard>
+            {dresses.map((item) => (
+              <HangerItem
+                key={item.id}
+                {...toRailItem(item)}
+                isDress
+                onPress={() => openItem(item, 'hanger')}
+              />
+            ))}
+          </RailCard>
+        ) : (
+          <EmptyRail label="no dresses yet" />
         )}
 
         <SectionHeader title="Saved Outfits" count={outfits.length} />

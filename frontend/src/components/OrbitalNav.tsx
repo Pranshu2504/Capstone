@@ -18,7 +18,7 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { key: "mirror", icon: "sun", label: "Mirror" },
+  { key: "mirror", icon: "sun", label: "Today" },
   { key: "wardrobe", icon: "grid", label: "Wardrobe" },
   { key: "lens", icon: "camera", label: "Lens" },
   { key: "calendar", icon: "calendar", label: "Calendar" },

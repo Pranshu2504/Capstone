@@ -7,6 +7,7 @@ import {
   Text,
   Platform,
   Modal,
+  Image,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
@@ -18,7 +19,7 @@ import Animated, {
   withSpring, 
   interpolateColor 
 } from "react-native-reanimated";
-import { useUser } from "@/api/hooks";
+import { useOutfits, useUser, useWardrobe } from "@/api/hooks";
 import { useTheme } from "@/context/ThemeContext";
 import { useColors } from "@/hooks/useColors";
 import { SCREEN_WIDTH } from '@/constants/layout';
@@ -69,7 +70,7 @@ const INITIAL_SETTINGS = [
   { icon: "sliders", label: "Style Preferences", status: "Effortless · Sharp · Powerful" },
   { icon: "user", label: "Size Profile", status: "S / EU 36 / 165cm" },
   { icon: "calendar", label: "Calendar Sync", status: "Not synced" },
-  { icon: "monitor", label: "Mirror Connect", status: "Not connected" },
+  { icon: "monitor", label: "Smart Display", status: "Not connected" },
   { icon: "lock", label: "Privacy", status: "Friends only" },
   { icon: "at-sign", label: "Social Accounts", status: "No accounts linked" },
 ];
@@ -120,6 +121,8 @@ export default function IdentityScreen() {
   const navigation = useNavigation<any>();
   const colors = useColors();
   const { data: user } = useUser();
+  const { data: wardrobe } = useWardrobe();
+  const { data: outfits } = useOutfits();
   const { theme, setTheme } = useTheme();
   const [settingsModal, setSettingsModal] = useState<string | null>(null);
   const [settingsData, setSettingsData] = useState(INITIAL_SETTINGS);
@@ -141,7 +144,7 @@ export default function IdentityScreen() {
           let newStatus = "Connected";
           if (settingsModal === "Social Accounts") newStatus = "Instagram & TikTok linked";
           if (settingsModal === "Calendar Sync") newStatus = "Google Calendar synced";
-          if (settingsModal === "Mirror Connect") newStatus = "ZORA Mirror Active";
+          if (settingsModal === "Smart Display") newStatus = "ZORA Studio Active";
           return { ...item, status: newStatus };
         }
         return item;
@@ -180,17 +183,8 @@ export default function IdentityScreen() {
     };
   };
 
-  const mostLoved = [
-    { name: "Black Cashmere Coat", color: "#1C1C1C", times: 20 },
-    { name: "Chelsea Boots", color: "#1C1C1C", times: 18 },
-    { name: "Leather Oxford Shoes", color: "#3B2A1A", times: 15 },
-  ];
-
-  const dusty = [
-    { name: "Oversized Blazer", color: "#6B5B4E", times: 1 },
-    { name: "Linen Wide-Leg Pants", color: "#C8BCA8", times: 3 },
-    { name: "Merino Turtleneck", color: "#8B8682", times: 2 },
-  ];
+  const mostLoved = wardrobe.slice().sort((a, b) => b.timesWorn - a.timesWorn).slice(0, 4);
+  const dusty = wardrobe.filter((i) => i.timesWorn === 0).slice(0, 4);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -228,17 +222,17 @@ export default function IdentityScreen() {
             <Text style={[styles.styleCardKeyword, { color: colors.text }]}>Effortless</Text>
             <View style={styles.styleCardStats}>
               <View style={styles.statItem}>
-                <Text style={[styles.statNum, { color: colors.text }]}>47</Text>
+                <Text style={[styles.statNum, { color: colors.text }]}>{wardrobe.length}</Text>
                 <Text style={[styles.statLabel, { color: colors.mutedForeground }]}>items</Text>
               </View>
               <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
               <View style={styles.statItem}>
-                <Text style={[styles.statNum, { color: colors.text }]}>23</Text>
+                <Text style={[styles.statNum, { color: colors.text }]}>{outfits.length}</Text>
                 <Text style={[styles.statLabel, { color: colors.mutedForeground }]}>outfits</Text>
               </View>
               <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
               <View style={styles.statItem}>
-                <Text style={[styles.statNum, { color: colors.text }]}>89%</Text>
+                <Text style={[styles.statNum, { color: colors.text }]}>{wardrobe.length ? `${Math.round((wardrobe.filter(i => i.timesWorn > 0).length / wardrobe.length) * 100)}%` : '0%'}</Text>
                 <Text style={[styles.statLabel, { color: colors.mutedForeground }]}>utilised</Text>
               </View>
             </View>
@@ -353,26 +347,46 @@ export default function IdentityScreen() {
 
           <Text style={[styles.subLabel, { color: colors.primary }]}>most loved</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.itemRail}>
-            {mostLoved.map((item, i) => (
-              <View key={i} style={[styles.reusabilityCard, styles.lovedCard, { backgroundColor: theme === 'dark' ? '#161208' : colors.card, borderColor: colors.brassSubtle }]}>
-                <View style={[styles.reusabilityBlock, { backgroundColor: item.color }]} />
-                <Text style={[styles.reusabilityName, { color: colors.text }]} numberOfLines={2}>{item.name}</Text>
-                <Text style={[styles.reusabilityTimes, { color: colors.primary }]}>{item.times}× worn</Text>
-              </View>
-            ))}
+            {mostLoved.length > 0 ? (
+              mostLoved.map((item) => (
+                <View key={item.id} style={[styles.reusabilityCard, styles.lovedCard, { backgroundColor: theme === 'dark' ? '#161208' : colors.card, borderColor: colors.brassSubtle }]}>
+                  {item.image ? (
+                    <Image source={{ uri: item.image }} style={[styles.reusabilityBlock, { borderRadius: 6 }]} resizeMode="cover" />
+                  ) : (
+                    <View style={[styles.reusabilityBlock, { backgroundColor: item.color }]} />
+                  )}
+                  <Text style={[styles.reusabilityName, { color: colors.text }]} numberOfLines={2}>{item.name}</Text>
+                  <Text style={[styles.reusabilityTimes, { color: colors.primary }]}>{item.timesWorn}× worn</Text>
+                </View>
+              ))
+            ) : (
+              <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 12, color: colors.mutedForeground, paddingHorizontal: 12 }}>
+                no items worn yet
+              </Text>
+            )}
           </ScrollView>
 
           <Text style={[styles.subLabel, { color: colors.mutedForeground }]}>collecting dust</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.itemRail}>
-            {dusty.map((item, i) => (
-              <View key={i} style={[styles.reusabilityCard, styles.dustyCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                <View style={[styles.reusabilityBlock, { backgroundColor: item.color, opacity: 0.5 }]} />
-                <Text style={[styles.reusabilityName, { color: colors.text, opacity: 0.6 }]} numberOfLines={2}>
-                  {item.name}
-                </Text>
-                <Text style={[styles.reusabilityTimes, { color: colors.mutedForeground }]}>{item.times}× worn</Text>
-              </View>
-            ))}
+            {dusty.length > 0 ? (
+              dusty.map((item) => (
+                <View key={item.id} style={[styles.reusabilityCard, styles.dustyCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                  {item.image ? (
+                    <Image source={{ uri: item.image }} style={[styles.reusabilityBlock, { borderRadius: 6, opacity: 0.7 }]} resizeMode="cover" />
+                  ) : (
+                    <View style={[styles.reusabilityBlock, { backgroundColor: item.color, opacity: 0.5 }]} />
+                  )}
+                  <Text style={[styles.reusabilityName, { color: colors.text, opacity: 0.8 }]} numberOfLines={2}>
+                    {item.name}
+                  </Text>
+                  <Text style={[styles.reusabilityTimes, { color: colors.mutedForeground }]}>{item.timesWorn}× worn</Text>
+                </View>
+              ))
+            ) : (
+              <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 12, color: colors.mutedForeground, paddingHorizontal: 12 }}>
+                no unworn items
+              </Text>
+            )}
           </ScrollView>
         </View>
 
@@ -442,14 +456,14 @@ export default function IdentityScreen() {
             <Text style={[styles.settingsSheetNote, { color: colors.text }]}>
               {settingsModal === "Calendar Sync"
                 ? "Seamlessly integrate your daily agenda to let ZORA suggest event-appropriate outfits."
-                : settingsModal === "Mirror Connect"
-                ? "Connect ZORA to a physical smart mirror device for hands-free 3D outfit previews."
+                : settingsModal === "Smart Display"
+                ? "Connect ZORA to a smart display device for hands-free 3D outfit previews."
                 : settingsModal === "Social Accounts"
                 ? "Link your social media to let ZORA analyze to your aesthetic pins and saved posts."
                 : "Adjust your preferences for this section."}
             </Text>
 
-            {(settingsModal === "Calendar Sync" || settingsModal === "Mirror Connect" || settingsModal === "Social Accounts") && (
+            {(settingsModal === "Calendar Sync" || settingsModal === "Smart Display" || settingsModal === "Social Accounts") && (
               <TouchableOpacity
                 style={[
                   styles.linkButton,
@@ -501,15 +515,15 @@ const styles = StyleSheet.create({
     flexShrink: 1,
   },
   screenTitle: {
-    fontFamily: "CormorantGaramond_700Bold",
-    fontSize: 22,
+    fontFamily: "PlayfairDisplay_700Bold",
+    fontSize: 26,
     color: "#F0ECE4",
-    letterSpacing: 0.3,
+    letterSpacing: -0.2,
   },
   iconBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: "#141414",
     borderWidth: 0.5,
     borderColor: "#2A2A2A",
@@ -521,7 +535,7 @@ const styles = StyleSheet.create({
     gap: 28,
   },
   styleCard: {
-    height: 200,
+    height: 210,
     borderRadius: 18,
     overflow: "hidden",
     position: "relative",
@@ -543,13 +557,13 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     padding: 20,
-    gap: 12,
+    gap: 14,
   },
   styleCardKeyword: {
-    fontFamily: "CormorantGaramond_700Bold",
-    fontSize: 38,
+    fontFamily: "PlayfairDisplay_700Bold",
+    fontSize: 44,
     color: "#F0ECE4",
-    letterSpacing: -1,
+    letterSpacing: -0.5,
   },
   styleCardStats: {
     flexDirection: "row",
@@ -558,18 +572,18 @@ const styles = StyleSheet.create({
   },
   statItem: {
     alignItems: "center",
-    gap: 1,
-    paddingHorizontal: 12,
+    gap: 2,
+    paddingHorizontal: 14,
   },
   statNum: {
     fontFamily: "Inter_600SemiBold",
-    fontSize: 16,
+    fontSize: 20,
     color: "#F0ECE4",
   },
   statLabel: {
     fontFamily: "Inter_400Regular",
-    fontSize: 11,
-    color: "rgba(240,236,228,0.5)",
+    fontSize: 12,
+    color: "rgba(240,236,228,0.6)",
     letterSpacing: 1,
     textTransform: "uppercase",
   },

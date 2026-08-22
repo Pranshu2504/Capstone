@@ -15,7 +15,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import Feather from "react-native-vector-icons/Feather";
 import { useColors } from "@/hooks/useColors";
-import { useWardrobe } from "@/api/hooks";
+import { useOutfits, useWardrobe } from "@/api/hooks";
 import ReactNativeHapticFeedback from "react-native-haptic-feedback";
 import { pickImage, type PickedImage, type PickSource } from "@/utils/pickImage";
 import { useTryOn } from "@/hooks/useTryOn";
@@ -25,16 +25,17 @@ import { SCREEN_WIDTH, SCREEN_HEIGHT } from '@/constants/layout';
 const width = SCREEN_WIDTH;
 const height = SCREEN_HEIGHT;
 
-type Mode = "mirror" | "link";
+type Mode = "tryon" | "link";
 
 export default function LensScreen() {
   const colors = useColors();
   const { data: wardrobeItems } = useWardrobe();
+  const { data: savedOutfits } = useOutfits();
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const insets = useSafeAreaInsets();
-  const [mode, setMode] = useState<Mode>("mirror");
-  const [selectedOutfit, setSelectedOutfit] = useState<string[]>([]);
+  const [mode, setMode] = useState<Mode>("tryon");
+  const [selectedGarmentId, setSelectedGarmentId] = useState<string | null>(null);
   const [linkUrl, setLinkUrl] = useState("");
   const [processing, setProcessing] = useState(false);
   const [showResult, setShowResult] = useState(false);
@@ -85,7 +86,6 @@ export default function LensScreen() {
   const runTryOn = () => {
     if (!person || !garment || tryOn.isBusy) return;
     ReactNativeHapticFeedback.trigger("impactMedium");
-    // performance mode keeps the mirror responsive at 1 credit per attempt.
     tryOn.run(person, garment, { category: "auto", mode: "performance" });
   };
 
@@ -93,13 +93,6 @@ export default function LensScreen() {
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const bottomPad = Platform.OS === "web" ? 34 : insets.bottom;
-
-  const outfits = [
-    { id: "effortless-monday", label: "effortless monday", items: ["1", "2", "3", "5"] },
-    { id: "editorial-power", label: "editorial power", items: ["1", "3", "5"] },
-    { id: "weekend-ease", label: "weekend ease", items: ["4", "6", "9"] },
-    { id: "evening-look", label: "evening look", items: ["10", "7", "5"] },
-  ];
 
   const processLink = () => {
     if (!linkUrl.trim()) return;
@@ -139,19 +132,19 @@ export default function LensScreen() {
         </View>
         <View style={[styles.modeSwitcher, { backgroundColor: colors.card }]}>
           <TouchableOpacity
-            onPress={() => setMode("mirror")}
+            onPress={() => setMode("tryon")}
             style={[
               styles.modeTab,
-              mode === "mirror" && { backgroundColor: colors.brass },
+              mode === "tryon" && { backgroundColor: colors.brass },
             ]}
           >
             <Text
               style={[
                 styles.modeTabText,
-                { color: mode === "mirror" ? colors.charcoal : colors.mutedForeground },
+                { color: mode === "tryon" ? colors.charcoal : colors.mutedForeground },
               ]}
             >
-              Mirror
+              Try-On
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -173,7 +166,7 @@ export default function LensScreen() {
         </View>
       </View>
 
-      {mode === "mirror" ? (
+      {mode === "tryon" ? (
         <ScrollView
           style={styles.mirrorMode}
           contentContainerStyle={{ paddingBottom: bottomPad + 110 }}
@@ -279,51 +272,50 @@ export default function LensScreen() {
             </Text>
           </TouchableOpacity>
 
-          <View style={styles.outfitFilmStrip}>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.filmStripContent}
-            >
-              {outfits.map((outfit) => {
-                const isActive = JSON.stringify(outfit.items) === JSON.stringify(selectedOutfit);
-                return (
-                  <TouchableOpacity
-                    key={outfit.id}
-                    onPress={() => {
-                      ReactNativeHapticFeedback.trigger("impactLight");
-                      setSelectedOutfit(isActive ? [] : outfit.items);
-                    }}
-                    style={[
-                      styles.filmCard,
-                      {
-                        backgroundColor: colors.card,
-                        borderColor: isActive ? colors.brass : colors.border,
-                        borderWidth: isActive ? 2 : StyleSheet.hairlineWidth,
-                      },
-                    ]}
-                  >
-                    <View style={styles.filmCardSwatches}>
-                      {outfit.items.slice(0, 3).map((itemId) => {
-                        const item = wardrobeItems.find((i) => i.id === itemId);
-                        return item ? (
-                          <View
-                            key={itemId}
-                            style={[styles.filmSwatch, { backgroundColor: item.color }]}
-                          />
-                        ) : null;
-                      })}
-                    </View>
-                    <Text style={[styles.filmLabel, { color: colors.warmWhite }]} numberOfLines={2}>
-                      {outfit.label}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
-          </View>
+          {wardrobeItems.length > 0 && (
+            <View style={styles.outfitFilmStrip}>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.filmStripContent}
+              >
+                {wardrobeItems.map((item) => {
+                  const isSelected = selectedGarmentId === item.id;
+                  return (
+                    <TouchableOpacity
+                      key={item.id}
+                      onPress={() => {
+                        ReactNativeHapticFeedback.trigger("impactLight");
+                        setSelectedGarmentId(isSelected ? null : item.id);
+                        if (!isSelected && item.image) {
+                          setGarment({ uri: item.image, name: item.name, type: 'image/jpeg' });
+                        }
+                      }}
+                      style={[
+                        styles.filmCard,
+                        {
+                          backgroundColor: colors.card,
+                          borderColor: isSelected ? colors.brass : colors.border,
+                          borderWidth: isSelected ? 2 : StyleSheet.hairlineWidth,
+                        },
+                      ]}
+                    >
+                      {item.image ? (
+                        <Image source={{ uri: item.image }} style={styles.slotThumb} resizeMode="cover" />
+                      ) : (
+                        <View style={[styles.filmSwatch, { backgroundColor: item.color, alignSelf: 'center', width: 32, height: 32, borderRadius: 16 }]} />
+                      )}
+                      <Text style={[styles.filmLabel, { color: colors.warmWhite }]} numberOfLines={1}>
+                        {item.name}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+            </View>
+          )}
 
-          {selectedOutfit.length > 0 && (
+          {Boolean(selectedGarmentId) && (
             <View style={styles.askZoraRow}>
               <TouchableOpacity
                 style={[styles.askZoraButton, { backgroundColor: colors.brass }]}

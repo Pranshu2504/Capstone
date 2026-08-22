@@ -7,11 +7,13 @@ import {
   Text,
   Platform,
   Modal,
+  Image,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import Feather from "react-native-vector-icons/Feather";
 import { useColors } from "@/hooks/useColors";
+import { useWardrobe } from "@/api/hooks";
 import ReactNativeHapticFeedback from "react-native-haptic-feedback";
 import { SCREEN_WIDTH } from '@/constants/layout';
 
@@ -65,6 +67,7 @@ const MONTHS = [
 
 export default function CalendarScreen() {
   const colors = useColors();
+  const { data: wardrobe } = useWardrobe();
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
   const [viewMode, setViewMode] = useState<ViewMode>("week");
@@ -250,25 +253,32 @@ export default function CalendarScreen() {
                 </View>
               </View>
 
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.outfitStrip}
-              >
-                {[
-                  { icon: "user", color: "#3A4A3A", label: "sage shirt" },
-                  { icon: "user", color: "#3A3A4A", label: "navy trousers" },
-                  { icon: "anchor", color: "#3A2A2A", label: "grey shoes" },
-                  { icon: "briefcase", color: "#2A2A2A", label: "tan bag" },
-                ].map((piece, i) => (
-                  <View key={i} style={styles.pieceTile}>
-                    <View style={[styles.pieceIcon, { backgroundColor: piece.color }]}>
-                      <Feather name={piece.icon as any} size={14} color="rgba(255,255,255,0.3)" />
+              {wardrobe.length > 0 ? (
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.outfitStrip}
+                >
+                  {wardrobe.slice(0, 4).map((piece) => (
+                    <View key={piece.id} style={styles.pieceTile}>
+                      {piece.image ? (
+                        <Image source={{ uri: piece.image }} style={[styles.pieceIcon, { borderRadius: 8 }]} resizeMode="cover" />
+                      ) : (
+                        <View style={[styles.pieceIcon, { backgroundColor: piece.color }]}>
+                          <Feather name="shopping-bag" size={14} color="rgba(255,255,255,0.4)" />
+                        </View>
+                      )}
+                      <Text style={styles.pieceLabel} numberOfLines={1}>{piece.name}</Text>
                     </View>
-                    <Text style={styles.pieceLabel}>{piece.label}</Text>
-                  </View>
-                ))}
-              </ScrollView>
+                  ))}
+                </ScrollView>
+              ) : (
+                <View style={{ paddingVertical: 14, alignItems: 'center' }}>
+                  <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 12, color: colors.mutedForeground }}>
+                    no items uploaded yet
+                  </Text>
+                </View>
+              )}
 
               <Text style={[styles.sectionLabel, { marginBottom: 8 }]}>TODAY'S EVENTS</Text>
               {TODAY_EVENTS.map((event, i) => (

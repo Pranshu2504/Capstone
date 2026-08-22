@@ -108,7 +108,7 @@ function TabNavigator() {
         name="mirror"
         component={MirrorScreen}
         options={{
-          title: 'Mirror',
+          title: 'Today',
           tabBarIcon: ({ color }) => <Feather name="sun" size={24} color={color} />,
         }}
       />
