@@ -244,7 +244,7 @@ export default function DoorScreen() {
           <TouchableOpacity onPress={continueAsGuest} activeOpacity={0.8} style={styles.guestButton}>
             <Text style={[styles.guestText, { color: colors.brass }]}>continue as guest</Text>
             <Text style={[styles.guestHint, { color: colors.mutedForeground }]}>
-              explore with a sample wardrobe · nothing is saved to you
+              look around first · nothing is saved to you
             </Text>
           </TouchableOpacity>
         </Animated.View>

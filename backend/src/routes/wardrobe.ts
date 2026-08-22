@@ -187,23 +187,33 @@ wardrobeRouter.post(
 
     const user = await getCurrentUser(req);
 
-    // Sequential on purpose: parallel vision calls on a batch of photos are the
-    // fastest way to trip Gemini's per-minute rate limit.
-    const created = [];
-    for (const file of files) {
-      const imagePath = await uploadGarmentPhoto({
-        userId: user.id,
-        buffer: file.buffer,
-        mimeType: file.mimetype,
-      });
+    /*
+     * Two levels of concurrency, because a strict loop made an eight-photo
+     * batch take as long as eight uploads plus eight vision calls end to end.
+     *
+     * Within a photo: the storage upload and the vision pass both only need
+     * the buffer, so waiting for one before starting the other bought nothing.
+     *
+     * Across photos: a bounded pool rather than Promise.all — firing every
+     * vision call at once is the quickest way to trip Gemini's per-minute
+     * limit, which degrades the whole batch to unlabelled placeholders.
+     */
+    const MAX_IN_FLIGHT = 4;
+    const created: Awaited<ReturnType<typeof prisma.wardrobeItem.create>>[] = new Array(files.length);
+    let next = 0;
 
-      const { analysis } = await analyseGarmentPhoto(
-        file.buffer.toString('base64'),
-        file.mimetype,
-      );
+    const worker = async (): Promise<void> => {
+      for (let i = next++; i < files.length; i = next++) {
+        const file = files[i];
 
-      created.push(
-        await prisma.wardrobeItem.create({
+        const [imagePath, { analysis }] = await Promise.all([
+          uploadGarmentPhoto({ userId: user.id, buffer: file.buffer, mimeType: file.mimetype }),
+          analyseGarmentPhoto(file.buffer.toString('base64'), file.mimetype),
+        ]);
+
+        // Indexed rather than pushed so the response keeps the order the
+        // photos were picked in, whichever worker finishes first.
+        created[i] = await prisma.wardrobeItem.create({
           data: {
             userId: user.id,
             imagePath,
@@ -219,9 +229,13 @@ wardrobeRouter.post(
             formality: analysis.formality,
             description: analysis.description,
           },
-        }),
-      );
-    }
+        });
+      }
+    };
+
+    await Promise.all(
+      Array.from({ length: Math.min(MAX_IN_FLIGHT, files.length) }, () => worker()),
+    );
 
     res.status(201).json(await serializeItems(created, signGarmentPhotos));
   }),
