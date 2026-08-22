@@ -22,7 +22,7 @@ export const gemini: GoogleGenAI | null = isStylistConfigured
  * 503 UNAVAILABLE under load; an older, less contended model answers a moment
  * later and beats dropping to the offline scorer.
  */
-const FALLBACK_MODELS = ['gemini-3.5-flash', 'gemini-2.5-flash'];
+const FALLBACK_MODELS = ['gemini-2.5-flash', 'gemini-2.5-flash-lite'];
 
 /** 503/429 are capacity, not a bad request — only these are worth another model. */
 function isTransient(err: unknown): boolean {

@@ -28,5 +28,8 @@ export const env = {
   // Optional: without a key, garment uploads still work (they just skip the
   // vision pass) and /api/recommend falls back to deterministic scoring.
   geminiApiKey: process.env.GEMINI_API_KEY,
-  geminiModel: process.env.GEMINI_MODEL ?? 'gemini-3.7-flash',
+  // gemini-3.7-flash returned 503 on every single call under load, so each
+  // request paid a failed round trip before the fallback answered — the whole
+  // reason uploads felt slow. Default to one that actually serves.
+  geminiModel: process.env.GEMINI_MODEL ?? 'gemini-3.5-flash',
 };
