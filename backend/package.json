@@ -16,7 +16,8 @@
     "postinstall": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
-    "db:reset": "prisma migrate reset"
+    "db:reset": "prisma migrate reset",
+    "photos:orphans": "tsx scripts/purge-orphan-photos.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
