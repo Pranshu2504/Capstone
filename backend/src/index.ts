@@ -43,12 +43,36 @@ app.use(
   }),
 );
 
+/**
+ * Which database this process is actually talking to — host and name only,
+ * never credentials.
+ *
+ * Worth exposing because a dashboard showing the right DATABASE_URL and a
+ * process using it are different things: Render applies env changes on the
+ * next deploy, so a saved-but-not-redeployed service keeps serving the old
+ * database while looking correctly configured. That cost an afternoon.
+ */
+function databaseIdentity(): { host: string; name: string } | null {
+  try {
+    const url = new URL(env.databaseUrl);
+    return { host: url.hostname, name: url.pathname.replace(/^\//, '') };
+  } catch {
+    return null;
+  }
+}
+
 app.get('/health', async (_req, res) => {
   try {
     await prisma.$queryRaw`SELECT 1`;
-    res.json({ ok: true, db: 'up', env: env.nodeEnv, time: new Date().toISOString() });
+    res.json({
+      ok: true,
+      db: 'up',
+      database: databaseIdentity(),
+      env: env.nodeEnv,
+      time: new Date().toISOString(),
+    });
   } catch {
-    res.status(503).json({ ok: false, db: 'down' });
+    res.status(503).json({ ok: false, db: 'down', database: databaseIdentity() });
   }
 });
 
@@ -137,6 +161,34 @@ async function initTryOn(): Promise<void> {
   }
 }
 
+/**
+ * Stops the free instance going to sleep.
+ *
+ * Render suspends a free web service after ~15 minutes without inbound
+ * traffic, and the next request then waits ~25s for a cold boot — long
+ * enough that the browser gives up and shows "Failed to fetch". Calling our
+ * own public URL on a shorter cycle keeps the instance in service.
+ *
+ * RENDER_EXTERNAL_URL is set by Render, so this does nothing locally.
+ *
+ * Note this consumes free instance-hours continuously: the free allowance is
+ * shared across services, so keeping this one awake means not also keeping a
+ * second one awake.
+ */
+function startKeepAlive(): void {
+  const url = process.env.RENDER_EXTERNAL_URL;
+  if (!url || process.env.KEEP_AWAKE === 'false') return;
+
+  const INTERVAL_MS = 10 * 60 * 1000; // Comfortably inside the ~15min idle window.
+  setInterval(() => {
+    fetch(`${url}/health`).catch(() => {
+      // A missed ping is harmless; the next one is ten minutes away.
+    });
+  }, INTERVAL_MS).unref();
+
+  console.log(`  Keep-alive: pinging ${url}/health every 10 minutes`);
+}
+
 const server = app.listen(env.port, () => {
   console.log(`ZORA API listening on http://localhost:${env.port}`);
   console.log(`  CORS origins: ${env.corsOrigins.join(', ')}`);
@@ -145,6 +197,7 @@ const server = app.listen(env.port, () => {
   );
   void ensureSeeded();
   void initTryOn();
+  startKeepAlive();
 });
 
 for (const signal of ['SIGINT', 'SIGTERM'] as const) {
