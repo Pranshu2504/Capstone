@@ -18,6 +18,7 @@ import { Router } from 'express';
 import { uploadTryOnImages } from '../middleware/upload.js';
 import {
   createTryOn,
+  createTryOnChain,
   deleteTryOnJob,
   getCredits,
   getPrediction,
@@ -44,6 +45,9 @@ apiRouter
   .route('/tryon')
   .post(uploadTryOnImages, wrap(createTryOn))
   .get(wrap(listTryOnJobs));
+
+// Before /tryon/:jobId, or "chain" is read as a job id.
+apiRouter.post('/tryon/chain', uploadTryOnImages, wrap(createTryOnChain));
 
 apiRouter
   .route('/tryon/:jobId')

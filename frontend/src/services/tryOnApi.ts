@@ -22,6 +22,12 @@ export interface TryOnImage {
   persisted: boolean;
 }
 
+/** One garment in a layered try-on, in the order it goes on. */
+export interface ChainGarment {
+  url: string;
+  category: 'auto' | 'tops' | 'bottoms' | 'one-pieces';
+}
+
 export interface TryOnJob {
   jobId: string;
   predictionId: string | null;
@@ -31,6 +37,8 @@ export interface TryOnJob {
   images: TryOnImage[];
   error: { name: string; message: string } | null;
   durationMs: number | null;
+  /** Only set for layered try-ons: which garment is being fitted. */
+  chain: { total: number; current: number } | null;
 }
 
 export interface TryOnOptions {
@@ -194,4 +202,36 @@ export async function checkTryOnService(): Promise<{
       detail: `Cannot reach the try-on service at ${AI_BASE_URL}. Is it running?`,
     };
   }
+}
+
+/**
+ * Wear several garments at once.
+ *
+ * FASHN fits one garment per prediction, so the server runs them in sequence
+ * — the person photo goes in with the first garment and each result becomes
+ * the model image for the next. That means a top and a bottom are two
+ * predictions and **two credits**; the caller should say so before spending
+ * them.
+ *
+ * Garments are passed as URLs because that is what the stylist already has:
+ * signed links to the pieces it just recommended, no re-upload needed.
+ */
+export async function submitTryOnChain(
+  personImage: PickedImage,
+  garments: ChainGarment[],
+  options: TryOnOptions = {},
+): Promise<TryOnJob> {
+  const form = new FormData();
+  await appendImage(form, 'model_image', personImage);
+
+  form.append('garments', JSON.stringify(garments));
+  form.append('model', 'tryon-v1.6');
+  form.append('mode', options.mode ?? 'performance');
+  form.append('garment_photo_type', options.garmentPhotoType ?? 'auto');
+  form.append('num_samples', String(options.numSamples ?? 1));
+
+  const response = await fetch(`${AI_BASE_URL}/api/tryon/chain`, { method: 'POST', body: form });
+  if (!response.ok) throw await parseError(response);
+
+  return normalizeJob(await response.json());
 }

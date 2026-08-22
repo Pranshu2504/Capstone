@@ -18,6 +18,7 @@ import { useColors } from "@/hooks/useColors";
 import { useOutfits, useWardrobe } from "@/api/hooks";
 import ReactNativeHapticFeedback from "react-native-haptic-feedback";
 import { pickImage, type PickedImage, type PickSource } from "@/utils/pickImage";
+import type { ChainGarment } from "@/services/tryOnApi";
 import { useTryOn } from "@/hooks/useTryOn";
 import { checkTryOnService } from "@/services/tryOnApi";
 import { SCREEN_WIDTH, SCREEN_HEIGHT, FLOATING_CTA_CLEARANCE } from '@/constants/layout';
@@ -44,6 +45,8 @@ export default function LensScreen() {
   // the Wardrobe screen's camera button.
   const [person, setPerson] = useState<PickedImage | null>(null);
   const [garment, setGarment] = useState<PickedImage | null>(null);
+  /** A whole look handed over by the stylist, fitted one layer at a time. */
+  const [chain, setChain] = useState<ChainGarment[] | null>(null);
   const [serviceNote, setServiceNote] = useState<string | null>(null);
 
   const tryOn = useTryOn();
@@ -54,9 +57,21 @@ export default function LensScreen() {
     const incoming = route.params?.garment as PickedImage | undefined;
     if (incoming) {
       setGarment(incoming);
+      setChain(null);
       navigation.setParams({ garment: undefined });
     }
   }, [route.params?.garment, navigation]);
+
+  // Or a full look handed over by the stylist.
+  useEffect(() => {
+    const incoming = route.params?.garments as ChainGarment[] | undefined;
+    if (incoming?.length) {
+      setChain(incoming);
+      // Show the first layer in the garment slot so the screen is not blank.
+      setGarment({ uri: incoming[0].url, name: 'garment.jpg', type: 'image/jpeg' });
+      navigation.setParams({ garments: undefined });
+    }
+  }, [route.params?.garments, navigation]);
 
   // Surface an unreachable service up front rather than at submit time.
   useEffect(() => {
@@ -84,13 +99,22 @@ export default function LensScreen() {
   };
 
   const runTryOn = () => {
-    if (!person || !garment || tryOn.isBusy) return;
+    if (!person || tryOn.isBusy) return;
     ReactNativeHapticFeedback.trigger("impactMedium");
-    // performance mode keeps the mirror responsive at 1 credit per attempt.
+
+    // A stylist hand-off carries several layers; each is its own prediction
+    // and its own credit, so the button says how many before it spends them.
+    if (chain?.length) {
+      tryOn.runChain(person, chain, { mode: "performance" });
+      return;
+    }
+    if (!garment) return;
+    // performance mode keeps the try-on responsive at 1 credit per attempt.
     tryOn.run(person, garment, { category: "auto", mode: "performance" });
   };
 
-  const canRun = Boolean(person && garment) && !tryOn.isBusy;
+  const canRun = Boolean(person && (garment || chain?.length)) && !tryOn.isBusy;
+  const credits = chain?.length ?? 1;
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const bottomPad = Platform.OS === "web" ? 34 : insets.bottom;
@@ -278,7 +302,13 @@ export default function LensScreen() {
             <Text
               style={[styles.tryLinkText, { color: canRun ? colors.charcoal : colors.mutedForeground }]}
             >
-              {tryOn.isBusy ? tryOn.progressLabel || "working…" : resultUrl ? "try again" : "try it on"}
+              {tryOn.isBusy
+                ? tryOn.progressLabel || "working…"
+                : resultUrl
+                  ? "try again"
+                  : credits > 1
+                    ? `try the look on · ${credits} credits`
+                    : "try it on"}
             </Text>
           </TouchableOpacity>
 
@@ -326,18 +356,6 @@ export default function LensScreen() {
               })}
             </ScrollView>
           </View>
-          )}
-
-          {selectedOutfit.length > 0 && (
-            <View style={styles.askZoraRow}>
-              <TouchableOpacity
-                style={[styles.askZoraButton, { backgroundColor: colors.brass }]}
-                onPress={() => ReactNativeHapticFeedback.trigger("impactLight")}
-              >
-                <Feather name="mic" size={16} color={colors.charcoal} />
-                <Text style={[styles.askZoraText, { color: colors.charcoal }]}>ask ZORA</Text>
-              </TouchableOpacity>
-            </View>
           )}
         </ScrollView>
       ) : (
@@ -566,10 +584,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 15,
   },
-  askZoraRow: {
-    alignItems: "center",
-    paddingTop: 6,
-  },
   bodyOutline: {
     alignItems: "center",
     gap: 4,
@@ -661,19 +675,6 @@ const styles = StyleSheet.create({
     position: "absolute",
     right: 24,
     alignItems: "center",
-  },
-  askZoraButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingVertical: 10,
-    paddingHorizontal: 18,
-    borderRadius: 20,
-  },
-  askZoraText: {
-    fontFamily: "Inter_500Medium",
-    fontSize: 13,
-    letterSpacing: 1,
   },
   linkMode: {
     flex: 1,

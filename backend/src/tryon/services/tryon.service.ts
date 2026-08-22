@@ -37,6 +37,19 @@ export interface TryOnInput {
   options: TryOnRequest;
 }
 
+/** One garment in a layered try-on, applied on top of the previous result. */
+export interface ChainGarment {
+  source: ImageSource;
+  /** FASHN needs to know what it is replacing; "auto" guesses, badly for layers. */
+  category: 'auto' | 'tops' | 'bottoms' | 'one-pieces';
+}
+
+export interface ChainInput {
+  person: ImageSource;
+  garments: ChainGarment[];
+  options: TryOnRequest;
+}
+
 export interface TryOnSubmission {
   job: TryOnJob;
   /** Present only when the caller asked to wait. */
@@ -197,6 +210,107 @@ export class TryOnService {
     // still polls as a safety net in case a delivery is lost.
     void this.awaitAndFinalize(job.id, predictionId).catch((error) => {
       logger.debug('Background try-on settled with an error', {
+        jobId: job.id,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    });
+
+    return { job: this.jobs.get(job.id)!, completed: false };
+  }
+
+  /**
+   * Wears several garments at once by running them in sequence: the person
+   * photo goes in with the first garment, and each result becomes the model
+   * image for the next.
+   *
+   * FASHN fits one garment per prediction, so a t-shirt and jeans genuinely
+   * are two runs and two credits — this makes that explicit rather than
+   * quietly dropping the second garment.
+   *
+   * One job id covers the whole chain, so the client polls the same way it
+   * does for a single garment; `chain` on the job says which step is running.
+   */
+  async submitChain(input: ChainInput): Promise<TryOnSubmission> {
+    const { garments, options } = input;
+    if (!garments.length) throw AppError.badRequest('At least one garment is required.');
+
+    const { wait, ...echoedParams } = options;
+    const job = this.jobs.create(options.model, {
+      ...echoedParams,
+      chained: garments.length,
+    });
+
+    this.jobs.update(job.id, { chain: { total: garments.length, current: 1 } });
+
+    const run = async (): Promise<void> => {
+      // Starts as the person, then becomes whatever the last step produced.
+      let model: ImageSource = input.person;
+
+      for (const [index, garment] of garments.entries()) {
+        this.jobs.update(job.id, { chain: { total: garments.length, current: index + 1 } });
+
+        const [personRef, garmentRef] = await Promise.all([
+          this.resolveImage(model, 'model_image'),
+          this.resolveImage(garment.source, 'garment_image'),
+        ]);
+
+        // Category is per garment: a chain is precisely the case where one
+        // "auto" guess cannot be right for every layer.
+        const stepOptions = { ...options, category: garment.category } as TryOnRequest;
+        const { modelName, inputs } = this.buildInputs(stepOptions, personRef.value, garmentRef.value);
+
+        const predictionId = await this.fashn.run(modelName, inputs, this.webhookUrl());
+        this.jobs.attachPrediction(job.id, predictionId);
+
+        const prediction = await this.fashn.waitForCompletion(predictionId, {
+          onProgress: (status) => this.jobs.update(job.id, { fashnStatus: status.status }),
+        });
+
+        const output = prediction.output?.[0];
+        if (!output) {
+          throw AppError.badRequest(
+            `Garment ${index + 1} produced no image, so the remaining layers were skipped.`,
+          );
+        }
+
+        const isLast = index === garments.length - 1;
+        if (isLast) {
+          await this.finalizeSuccess(job.id, prediction);
+        } else {
+          // Intermediate images are inputs, not results — feed the CDN URL
+          // straight back in rather than mirroring every half-dressed step.
+          model = { kind: 'url', url: output };
+        }
+      }
+    };
+
+    const onFailure = (error: unknown) => {
+      const isTimeout = error instanceof AppError && error.code === 'GatewayTimeout';
+      this.jobs.update(job.id, {
+        status: isTimeout ? 'timeout' : 'failed',
+        error:
+          error instanceof FashnRequestError
+            ? { name: error.fashnErrorName, message: error.message }
+            : {
+                name: isTimeout ? 'TimeoutError' : 'PipelineError',
+                message: error instanceof Error ? error.message : String(error),
+              },
+      });
+    };
+
+    if (wait) {
+      try {
+        await run();
+      } catch (error) {
+        onFailure(error);
+        throw error;
+      }
+      return { job: this.jobs.get(job.id)!, completed: true };
+    }
+
+    void run().catch((error) => {
+      onFailure(error);
+      logger.debug('Background try-on chain settled with an error', {
         jobId: job.id,
         error: error instanceof Error ? error.message : String(error),
       });

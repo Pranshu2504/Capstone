@@ -139,20 +139,32 @@ export default function StylistScreen() {
     feedback.mutate({ outfitId, liked });
   };
 
-  /** Hands one garment to the Lens try-on screen, inside the tab navigator. */
-  const tryOn = (item: ApiWardrobeItem) => {
-    if (!item.image) return;
+  /** FASHN's category vocabulary, from the wardrobe's own categories. */
+  const categoryFor = (item: ApiWardrobeItem): 'tops' | 'bottoms' | 'one-pieces' | 'auto' => {
+    const c = item.category.toLowerCase();
+    if (c === 'tops' || c === 'outerwear') return 'tops';
+    if (c === 'bottoms') return 'bottoms';
+    if (c === 'dresses') return 'one-pieces';
+    return 'auto';
+  };
+
+  /**
+   * Hands the look over to the Lens try-on screen.
+   *
+   * Everything wearable goes, not just the tapped piece: a t-shirt and jeans
+   * are fitted in sequence so you see the whole outfit rather than a shirt
+   * over whatever you happened to be wearing. Shoes, belts and scarves are
+   * left out — FASHN fits clothing onto a body, and sending them would spend
+   * a credit each to change nothing.
+   */
+  const tryOn = (items: ApiWardrobeItem[]) => {
+    const garments = items
+      .filter((i) => i.image && ['tops', 'bottoms', 'dresses', 'outerwear'].includes(i.category.toLowerCase()))
+      .map((i) => ({ url: i.image as string, category: categoryFor(i) }));
+
+    if (!garments.length) return;
     ReactNativeHapticFeedback.trigger('impactMedium');
-    navigation.navigate('Main', {
-      screen: 'lens',
-      params: {
-        garment: {
-          uri: item.image,
-          name: `${item.name.replace(/\s+/g, '-').toLowerCase()}.jpg`,
-          type: 'image/jpeg',
-        },
-      },
-    });
+    navigation.navigate('Main', { screen: 'lens', params: { garments } });
   };
 
   const answeredCount = questions.filter((q) => {
@@ -188,7 +200,11 @@ export default function StylistScreen() {
   if (phase === 'result') {
     const result = recommend.data;
     const failed = recommend.isError || !result;
-    const wearable = result?.itemDetails.filter((i) => i.image) ?? [];
+    // Only clothing counts: shoes and accessories cannot be fitted, so
+    // including them would spend a credit each without changing the image.
+    const wearable = (result?.itemDetails ?? []).filter(
+      (i) => i.image && ['tops', 'bottoms', 'dresses', 'outerwear'].includes(i.category.toLowerCase()),
+    );
 
     return (
       <ScrollView
@@ -245,7 +261,7 @@ export default function StylistScreen() {
                 <TouchableOpacity
                   key={item.id}
                   activeOpacity={item.image ? 0.8 : 1}
-                  onPress={() => tryOn(item)}
+                  onPress={() => tryOn([item])}
                   style={[styles.itemCard, { borderColor: colors.border, backgroundColor: colors.surface }]}
                 >
                   {item.image ? (
@@ -330,7 +346,7 @@ export default function StylistScreen() {
                 styles.primaryButton,
                 { backgroundColor: wearable.length ? colors.brass : colors.surface },
               ]}
-              onPress={() => wearable.length && tryOn(wearable[0])}
+              onPress={() => tryOn(wearable)}
               activeOpacity={0.85}
               disabled={!wearable.length}
             >
@@ -345,7 +361,11 @@ export default function StylistScreen() {
                   { color: wearable.length ? colors.charcoal : colors.mutedForeground },
                 ]}
               >
-                {wearable.length ? 'try it on' : 'upload photos to try on'}
+                {!wearable.length
+                  ? 'upload photos to try on'
+                  : wearable.length === 1
+                    ? 'try it on'
+                    : `try the look on · ${wearable.length} credits`}
               </Text>
             </TouchableOpacity>
 

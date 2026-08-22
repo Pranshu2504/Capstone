@@ -56,6 +56,28 @@ export type TryOnMaxRequest = z.infer<typeof tryonMaxSchema>;
  * images FASHN can fetch itself. At least one form must be present per slot;
  * the controller enforces that after multer has run.
  */
+/**
+ * Garments for a layered try-on, in the order they go on.
+ *
+ * Arrives as a JSON string when sent through multipart alongside the person
+ * photo, so it is parsed leniently rather than requiring a JSON body the
+ * file upload cannot use.
+ */
+export const chainGarmentsSchema = z.object({
+  garments: z
+    .preprocess(
+      (value) => (typeof value === 'string' ? JSON.parse(value) : value),
+      z.array(
+        z.object({
+          url: z.string().url(),
+          category: z.enum(['auto', 'tops', 'bottoms', 'one-pieces']).default('auto'),
+        }),
+      ),
+    )
+    // Four layers is already eight credits; past that it is a mistake.
+    .refine((g) => g.length >= 1 && g.length <= 4, 'Send between 1 and 4 garments.'),
+});
+
 export const imageUrlFieldsSchema = z.object({
   model_image_url: z.string().url().optional(),
   garment_image_url: z.string().url().optional(),

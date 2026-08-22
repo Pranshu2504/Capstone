@@ -13,6 +13,7 @@ import { fashnService } from '../services/fashn.service.js';
 import { jobStore, type TryOnJob } from '../services/jobStore.service.js';
 import { tryOnService, type ImageSource } from '../services/tryon.service.js';
 import {
+  chainGarmentsSchema,
   imageUrlFieldsSchema,
   listJobsQuerySchema,
   tryOnRequestSchema,
@@ -40,6 +41,9 @@ function serializeJob(job: TryOnJob) {
     completedAt: job.completedAt,
     durationMs: job.durationMs,
     params: job.params,
+    // Present only for layered try-ons, so the client can say which garment
+    // is being fitted instead of showing one long unexplained wait.
+    chain: job.chain ?? null,
   };
 }
 
@@ -97,6 +101,43 @@ export async function createTryOn(req: Request, res: Response): Promise<void> {
   });
 
   const { job, completed } = await tryOnService.submit({ person, garment, options });
+
+  res.status(completed ? 200 : 202).json(serializeJob(job));
+}
+
+/**
+ * POST /api/tryon/chain
+ *
+ * Wear several garments at once. The person photo is uploaded as
+ * `model_image`; the garments arrive as a JSON array of `{ url, category }`,
+ * which is what the stylist already has — signed URLs for the pieces it just
+ * recommended.
+ *
+ * Each garment is a separate FASHN prediction and therefore a separate
+ * credit: a top and a bottom cost two.
+ */
+export async function createTryOnChain(req: Request, res: Response): Promise<void> {
+  const body = { model: env.FASHN_DEFAULT_MODEL, ...req.body };
+  const options = tryOnRequestSchema.parse(body);
+  const { garments } = chainGarmentsSchema.parse(req.body);
+
+  const urls = imageUrlFieldsSchema.parse(req.body);
+  const person = readImageSource(req, 'model_image', urls.model_image_url);
+
+  logger.info('Chained try-on requested', {
+    model: options.model,
+    garments: garments.length,
+    personSource: person.kind,
+  });
+
+  const { job, completed } = await tryOnService.submitChain({
+    person,
+    garments: garments.map((g) => ({
+      source: { kind: 'url' as const, url: g.url },
+      category: g.category,
+    })),
+    options,
+  });
 
   res.status(completed ? 200 : 202).json(serializeJob(job));
 }

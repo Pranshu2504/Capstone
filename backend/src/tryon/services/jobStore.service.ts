@@ -41,6 +41,13 @@ export interface TryOnJob {
   durationMs: number | null;
   /** Echo of the request parameters, minus the image payloads. */
   params: Record<string, unknown>;
+  /**
+   * Progress through a layered try-on. Absent for a single garment.
+   * FASHN fits one garment per prediction, so wearing a top and a bottom is
+   * two runs; this lets the client say "garment 2 of 2" instead of stalling
+   * silently on what looks like one long request.
+   */
+  chain?: { total: number; current: number };
 }
 
 /** Jobs older than this are evicted to keep memory bounded. */
