@@ -17,7 +17,7 @@ import Feather from 'react-native-vector-icons/Feather';
 import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
 import { useColors } from '@/hooks/useColors';
 import { pickImage, pickImages, type PickSource } from '@/utils/pickImage';
-import { useOutfits, useUploadGarments, useWardrobe } from '@/api/hooks';
+import { useDeleteWardrobeItem, useOutfits, useUploadGarments, useWardrobe } from '@/api/hooks';
 import type { ApiWardrobeItem } from '@/api/types';
 import { FLOATING_CTA_CLEARANCE } from '@/constants/layout';
 
@@ -109,15 +109,15 @@ const rc = StyleSheet.create({
 });
 
 function HangerItem({
-  name, bg, stroke, wears, cat, isDress, image, onPress,
-}: { name: string; bg: string; stroke: string; wears: number; cat: string; isDress?: boolean; image?: string | null; onPress?: () => void }) {
+  name, bg, stroke, wears, cat, isDress, image, onPress, onLongPress,
+}: { name: string; bg: string; stroke: string; wears: number; cat: string; isDress?: boolean; image?: string | null; onPress?: () => void; onLongPress?: () => void }) {
   const colors = useColors();
   const { theme } = useTheme();
   const woods = getWoodTone(theme as any);
   const lowWear = wears <= 1;
 
   return (
-    <TouchableOpacity style={hng.wrapper} onPress={onPress} activeOpacity={0.85}>
+    <TouchableOpacity style={hng.wrapper} onPress={onPress} onLongPress={onLongPress} activeOpacity={0.85}>
       <View style={[hng.hook, { backgroundColor: woods.bracketBorder }]} />
       <View style={[hng.bar, { backgroundColor: woods.rod }]} />
       <View style={[hng.card, { backgroundColor: bg }, lowWear && { borderColor: colors.destructive }]}>
@@ -168,11 +168,11 @@ const sc = StyleSheet.create({
   scroll:{ gap: 8, alignItems: 'flex-start' },
 });
 
-function FoldedItem({ name, bg, wears, image, onPress }: { name: string; bg: string; wears: number; image?: string | null; onPress?: () => void }) {
+function FoldedItem({ name, bg, wears, image, onPress, onLongPress }: { name: string; bg: string; wears: number; image?: string | null; onPress?: () => void; onLongPress?: () => void }) {
   const colors = useColors();
   const lowWear = wears === 0;
   return (
-    <TouchableOpacity style={fi.wrapper} onPress={onPress} activeOpacity={0.85}>
+    <TouchableOpacity style={fi.wrapper} onPress={onPress} onLongPress={onLongPress} activeOpacity={0.85}>
       <View style={[fi.fold, { backgroundColor: bg }]}>
         {image ? (
           <Image source={{ uri: image }} style={fi.photo} resizeMode="cover" />
@@ -283,6 +283,8 @@ export default function WardrobeScreen() {
   const uploadGarments = useUploadGarments();
   const { data: wardrobe } = useWardrobe();
   const { data: outfits } = useOutfits();
+  const deleteItem = useDeleteWardrobeItem();
+  const [pendingDelete, setPendingDelete] = useState<ApiWardrobeItem | null>(null);
 
   const inCategory = (...names: string[]) =>
     wardrobe.filter((i) => names.includes(i.category.toLowerCase()));
@@ -294,6 +296,30 @@ export default function WardrobeScreen() {
   const everythingElse = wardrobe.filter(
     (i) => !['tops', 'dresses', 'bottoms', 'outerwear'].includes(i.category.toLowerCase()),
   );
+
+  /**
+   * Long-press asks before deleting. Deleting a garment also removes its
+   * photo from storage, so it is not something to trigger by mis-tapping a
+   * rail you were trying to scroll.
+   */
+  const confirmDelete = (item: ApiWardrobeItem) => {
+    ReactNativeHapticFeedback.trigger('impactMedium');
+    setPendingDelete(item);
+  };
+
+  const doDelete = async () => {
+    if (!pendingDelete) return;
+    const item = pendingDelete;
+    setPendingDelete(null);
+    try {
+      await deleteItem.mutateAsync(item.id);
+      ReactNativeHapticFeedback.trigger('notificationSuccess');
+      setUploadNote(`removed "${item.name}"`);
+    } catch (err) {
+      ReactNativeHapticFeedback.trigger('notificationError');
+      setUploadNote(err instanceof Error ? err.message : 'could not remove that piece');
+    }
+  };
 
   const openItem = (item: ApiWardrobeItem, displayType: 'hanger' | 'folded') =>
     navigation.navigate('ClothingCategory', {
@@ -401,6 +427,12 @@ export default function WardrobeScreen() {
           </TouchableOpacity>
         </View>
 
+        {!wardrobe.length ? null : (
+          <Text style={[s.uploadNote, { color: colors.mutedForeground }]}>
+            tap a piece for details · hold to remove
+          </Text>
+        )}
+
         {!!uploadNote && (
           <Text style={[s.uploadNote, { color: colors.primary }]}>{uploadNote}</Text>
         )}
@@ -415,6 +447,7 @@ export default function WardrobeScreen() {
                 key={item.id}
                 {...toRailItem(item)}
                 onPress={() => openItem(item, 'hanger')}
+                onLongPress={() => confirmDelete(item)}
               />
             ))}
           </RailCard>
@@ -431,6 +464,7 @@ export default function WardrobeScreen() {
                 {...toRailItem(item)}
                 isDress
                 onPress={() => openItem(item, 'hanger')}
+                onLongPress={() => confirmDelete(item)}
               />
             ))}
           </RailCard>
@@ -446,6 +480,7 @@ export default function WardrobeScreen() {
                 key={item.id}
                 {...toRailItem(item)}
                 onPress={() => openItem(item, 'folded')}
+                onLongPress={() => confirmDelete(item)}
               />
             ))}
           </ShelfCard>
@@ -462,6 +497,7 @@ export default function WardrobeScreen() {
                   key={item.id}
                   {...toRailItem(item)}
                   onPress={() => openItem(item, 'hanger')}
+                onLongPress={() => confirmDelete(item)}
                 />
               ))}
             </RailCard>
@@ -477,6 +513,7 @@ export default function WardrobeScreen() {
                   key={item.id}
                   {...toRailItem(item)}
                   onPress={() => openItem(item, 'folded')}
+                onLongPress={() => confirmDelete(item)}
                 />
               ))}
             </ShelfCard>
@@ -503,6 +540,36 @@ export default function WardrobeScreen() {
         )}
 
       </ScrollView>
+
+      {/* ── Remove a garment ── */}
+      <Modal visible={!!pendingDelete} transparent animationType="fade">
+        <View style={[s.modalBackdrop, s.confirmBackdrop]}>
+          <View style={[s.confirmCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <Text style={[s.confirmTitle, { color: colors.text }]}>
+              remove “{pendingDelete?.name}”?
+            </Text>
+            <Text style={[s.confirmBody, { color: colors.mutedForeground }]}>
+              This deletes the photo too, and ZORA will stop styling you with it.
+            </Text>
+            <View style={s.confirmRow}>
+              <TouchableOpacity
+                style={[s.confirmBtn, { borderColor: colors.border }]}
+                onPress={() => setPendingDelete(null)}
+                activeOpacity={0.85}
+              >
+                <Text style={[s.confirmBtnText, { color: colors.text }]}>keep it</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[s.confirmBtn, { backgroundColor: colors.destructive, borderColor: colors.destructive }]}
+                onPress={doDelete}
+                activeOpacity={0.85}
+              >
+                <Text style={[s.confirmBtnText, { color: '#FFFFFF' }]}>remove</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       {/* ── Import Link Modal ── */}
       <Modal visible={showImportModal} transparent animationType="fade">
@@ -545,6 +612,43 @@ export default function WardrobeScreen() {
 
 // ─── Styles ──────────────────────────────────────────────────────────────────
 const s = StyleSheet.create({
+  confirmBackdrop: { alignItems: 'center', justifyContent: 'center' },
+  confirmCard: {
+    width: '84%',
+    maxWidth: 340,
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: 22,
+    gap: 12,
+  },
+  confirmTitle: {
+    fontFamily: 'PlayfairDisplay_700Bold',
+    fontSize: 18,
+    lineHeight: 24,
+  },
+  confirmBody: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 13,
+    lineHeight: 19,
+  },
+  confirmRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 6,
+  },
+  confirmBtn: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderRadius: 22,
+    borderWidth: 1,
+  },
+  confirmBtnText: {
+    fontFamily: 'Inter_500Medium',
+    fontSize: 12,
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
+  },
   uploadNote: {
     fontFamily: 'Inter_400Regular',
     fontSize: 13,
