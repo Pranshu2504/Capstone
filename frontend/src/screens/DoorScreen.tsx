@@ -130,7 +130,7 @@ export default function DoorScreen() {
       ReactNativeHapticFeedback.trigger("impactLight");
       if (mode === "register") {
         await signUp(name.trim(), trimmedEmail, password);
-        navigation.reset({ index: 0, routes: [{ name: "Interview" }] });
+        navigation.reset({ index: 0, routes: [{ name: "Main" }] });
       } else {
         await signIn(trimmedEmail, password);
         navigation.reset({ index: 0, routes: [{ name: "Main" }] });
